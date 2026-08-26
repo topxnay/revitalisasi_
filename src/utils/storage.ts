@@ -1,10 +1,12 @@
-import { PengajuanRevitalisasi, User, UserRole, JenjangType } from '../types';
+import { PengajuanRevitalisasi, User, UserRole, JenjangType, BantuanCatalogItem } from '../types';
 import { INITIAL_USERS, INITIAL_PENGAJUAN } from '../data/seedData';
+import { STANDARD_CATALOG } from '../data/defaultCatalog';
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'simrevit_current_user_v1',
   USERS: 'simrevit_users_v1',
-  PROPOSALS: 'simrevit_proposals_v1'
+  PROPOSALS: 'simrevit_proposals_v1',
+  CATALOG: 'simrevit_catalog_v1'
 };
 
 const DEMO_USER_IDS = ['usr_smk1', 'usr_smk2', 'usr_sma1', 'usr_paud1', 'usr_sd1', 'usr_smp1', 'usr_slb1', 'usr_pkbm1'];
@@ -178,6 +180,59 @@ export function setCurrentUser(user: User | null) {
 export const getStoredCurrentUser = getCurrentUser;
 export const setStoredCurrentUser = setCurrentUser;
 
+export function getStoredCatalog(): BantuanCatalogItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CATALOG);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(STANDARD_CATALOG));
+      return STANDARD_CATALOG;
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(STANDARD_CATALOG));
+      return STANDARD_CATALOG;
+    }
+    return parsed;
+  } catch (e) {
+    console.error('Failed to get stored catalog:', e);
+    return STANDARD_CATALOG;
+  }
+}
+
+export function saveStoredCatalog(catalog: BantuanCatalogItem[]) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(catalog));
+  } catch (e) {
+    console.error('Failed to save catalog:', e);
+  }
+}
+
+export function saveCatalogItemToStorage(item: BantuanCatalogItem): BantuanCatalogItem[] {
+  const currentCatalog = getStoredCatalog();
+  const existingIdx = currentCatalog.findIndex(c => c.id === item.id);
+  let updated: BantuanCatalogItem[];
+  if (existingIdx >= 0) {
+    updated = [...currentCatalog];
+    updated[existingIdx] = item;
+  } else {
+    updated = [...currentCatalog, item];
+  }
+  saveStoredCatalog(updated);
+  return updated;
+}
+
+export function deleteCatalogItemFromStorage(itemId: string): BantuanCatalogItem[] {
+  const currentCatalog = getStoredCatalog();
+  const updated = currentCatalog.filter(c => c.id !== itemId);
+  saveStoredCatalog(updated);
+  return updated;
+}
+
+export function resetCatalogToDefault(): BantuanCatalogItem[] {
+  localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(STANDARD_CATALOG));
+  return STANDARD_CATALOG;
+}
+
 export function generateRegistrationNumber(jenjang: JenjangType, existingCount: number): string {
   const code = jenjang.includes('PAUD') || jenjang.includes('TK')
     ? 'PAUD'
@@ -189,9 +244,11 @@ export function generateRegistrationNumber(jenjang: JenjangType, existingCount: 
 export function resetToInitialData() {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
   localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify(INITIAL_PENGAJUAN));
+  localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(STANDARD_CATALOG));
   return {
     users: INITIAL_USERS,
-    proposals: INITIAL_PENGAJUAN
+    proposals: INITIAL_PENGAJUAN,
+    catalog: STANDARD_CATALOG
   };
 }
 

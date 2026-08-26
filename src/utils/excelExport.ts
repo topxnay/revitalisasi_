@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
-import { PengajuanRevitalisasi, JenjangType } from '../types';
-import { STANDARD_CATALOG } from '../data/defaultCatalog';
+import { PengajuanRevitalisasi, JenjangType, BantuanCatalogItem } from '../types';
+import { getStoredCatalog } from './storage';
 
 export function formatRupiah(amount: number): string {
   return new Intl.NumberFormat('id-ID', {
@@ -159,7 +159,8 @@ export function exportRekapitulasiExcel(
   costRows.push([]);
   costRows.push(['Menu / Komponen Bantuan', 'Nominal Satuan (Rp)', 'Satuan', 'Kategori', 'Keterangan']);
 
-  STANDARD_CATALOG.forEach(item => {
+  const catalog = getStoredCatalog();
+  catalog.forEach(item => {
     costRows.push([
       item.name,
       formatRupiah(item.nominalSatuan),

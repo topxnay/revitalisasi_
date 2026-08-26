@@ -18,9 +18,10 @@ import {
   ChevronRight,
   AlertCircle
 } from 'lucide-react';
-import { JenjangType, PengajuanRevitalisasi, User } from '../types';
+import { JenjangType, PengajuanRevitalisasi, User, BantuanCatalogItem } from '../types';
 import { JENJANG_LIST, STANDARD_CATALOG, JENJANG_COLORS } from '../data/defaultCatalog';
 import { formatRupiah } from '../utils/excelExport';
+import { getStoredCatalog } from '../utils/storage';
 
 interface LandingPageProps {
   onOpenLogin: (role?: 'admin' | 'user') => void;
@@ -28,6 +29,7 @@ interface LandingPageProps {
   proposals: PengajuanRevitalisasi[];
   onSelectProposalDetail: (proposal: PengajuanRevitalisasi) => void;
   onNavigateToForm: () => void;
+  catalog?: BantuanCatalogItem[];
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -35,8 +37,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   currentUser,
   proposals = [],
   onSelectProposalDetail,
-  onNavigateToForm
+  onNavigateToForm,
+  catalog
 }) => {
+  const activeCatalog = catalog || getStoredCatalog();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJenjangTab, setSelectedJenjangTab] = useState<JenjangType>('SMK');
 
@@ -335,7 +339,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {STANDARD_CATALOG.filter(c => !c.jenjangApplicable || c.jenjangApplicable.includes(selectedJenjangTab)).slice(0, 6).map(item => (
+              {activeCatalog.filter(c => !c.jenjangApplicable || c.jenjangApplicable.includes(selectedJenjangTab)).slice(0, 6).map(item => (
                 <div key={item.id} className="p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-indigo-400/30 transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -475,7 +479,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {STANDARD_CATALOG.map((item, idx) => (
+                {activeCatalog.map((item, idx) => (
                   <tr key={item.id} className="hover:bg-white/5 transition-colors">
                     <td className="py-3 px-4 font-bold text-slate-400">{idx + 1}</td>
                     <td className="py-3 px-4 font-bold text-white">{item.name}</td>

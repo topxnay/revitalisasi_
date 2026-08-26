@@ -2,17 +2,10 @@ import React, { useState } from 'react';
 import { 
   X, 
   LogIn, 
-  ShieldCheck, 
-  School, 
   KeyRound, 
-  UserPlus, 
-  AlertCircle, 
-  Sparkles,
-  ArrowRight,
-  CheckCircle
+  AlertCircle
 } from 'lucide-react';
-import { User, JenjangType } from '../types';
-import { JENJANG_LIST } from '../data/defaultCatalog';
+import { User } from '../types';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -29,29 +22,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onClose,
   onLoginSuccess,
   users,
-  registeredUsers,
-  onRegisterUser
+  registeredUsers
 }) => {
   const userList = users || registeredUsers || [];
-  const [tab, setTab] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Register form state
-  const [regForm, setRegForm] = useState({
-    username: '',
-    password: '',
-    confirmPassword: '',
-    nama: '',
-    email: '',
-    noHp: '',
-    namaSekolah: '',
-    npsn: '',
-    jenjang: 'SMK' as JenjangType,
-    kabupaten: 'Kabupaten Tasikmalaya',
-    provinsi: 'JAWA BARAT'
-  });
 
   if (!isOpen) return null;
 
@@ -76,55 +52,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage('');
-
-    if (regForm.password !== regForm.confirmPassword) {
-      setErrorMessage('Konfirmasi kata sandi tidak cocok.');
-      return;
-    }
-
-    if (userList.some(u => u.username.toLowerCase() === regForm.username.trim().toLowerCase())) {
-      setErrorMessage('Username tersebut sudah digunakan. Silakan pilih username lain.');
-      return;
-    }
-
-    if (userList.some(u => u.npsn && u.npsn === regForm.npsn.trim())) {
-      setErrorMessage('NPSN ini sudah terdaftar dalam sistem.');
-      return;
-    }
-
-    const newUser: User = {
-      id: `usr_${Date.now()}`,
-      username: regForm.username.trim(),
-      password: regForm.password,
-      nama: regForm.nama,
-      role: 'user',
-      email: regForm.email,
-      noHp: regForm.noHp,
-      namaSekolah: regForm.namaSekolah,
-      npsn: regForm.npsn,
-      jenjang: regForm.jenjang,
-      kabupaten: regForm.kabupaten,
-      provinsi: regForm.provinsi,
-      status: 'active',
-      createdAt: new Date().toISOString()
-    };
-
-    if (onRegisterUser) {
-      onRegisterUser(newUser);
-    }
-    onLoginSuccess(newUser);
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200 text-slate-100">
+      <div className="relative w-full max-w-md bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200 text-slate-100">
         
         {/* Header with Title & Close */}
-        <div className="bg-white/5 border-b border-white/10 p-6 sm:p-7 relative backdrop-blur-md">
+        <div className="bg-white/5 border-b border-white/10 p-6 relative backdrop-blur-md">
           <button
             id="btn-close-modal"
             onClick={onClose}
@@ -133,51 +66,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center gap-3.5 mb-2">
+          <div className="flex items-center gap-3.5">
             <div className="p-3 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
               <KeyRound className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-heading font-bold text-white">
-                Masuk Sistem SIM-REVIT 2027
+              <h2 className="text-xl font-heading font-bold text-white">
+                Masuk Sistem SIM-REVIT
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Silakan masuk dengan akun Admin atau Akun Satuan Pendidikan
+              <p className="text-xs text-slate-400 mt-0.5">
+                Silakan masuk dengan akun Admin atau Satuan Pendidikan
               </p>
             </div>
-          </div>
-
-          {/* Tab Switcher */}
-          <div className="flex items-center gap-2 mt-5 pt-3 border-t border-white/10">
-            <button
-              id="tab-login"
-              onClick={() => { setTab('login'); setErrorMessage(''); }}
-              className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 backdrop-blur-md ${
-                tab === 'login' 
-                  ? 'bg-indigo-600 text-white border border-indigo-400/40 shadow-lg shadow-indigo-600/30' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-              }`}
-            >
-              <LogIn className="w-4 h-4" />
-              <span>Masuk dengan Akun</span>
-            </button>
-            <button
-              id="tab-register"
-              onClick={() => { setTab('register'); setErrorMessage(''); }}
-              className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 backdrop-blur-md ${
-                tab === 'register' 
-                  ? 'bg-indigo-600 text-white border border-indigo-400/40 shadow-lg shadow-indigo-600/30' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-              }`}
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Registrasi Sekolah Baru</span>
-            </button>
           </div>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 sm:p-7 max-h-[75vh] overflow-y-auto space-y-6">
+        <div className="p-6 sm:p-7 space-y-5">
           {errorMessage && (
             <div className="p-4 bg-red-500/15 border border-red-500/25 text-red-300 rounded-2xl text-xs sm:text-sm flex items-center gap-2.5 backdrop-blur-md">
               <AlertCircle className="w-5 h-5 shrink-0 text-red-400" />
@@ -185,209 +90,47 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
           )}
 
-          {tab === 'login' ? (
-            <div className="space-y-6">
-              {/* Form Manual Login */}
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Nama Pengguna / Username / NPSN
-                  </label>
-                  <input
-                    id="input-login-username"
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Contoh: admin atau username sekolah"
-                    className="w-full px-4 py-3 rounded-2xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Kata Sandi
-                  </label>
-                  <input
-                    id="input-login-password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-3 rounded-2xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-
-                <button
-                  id="btn-submit-login"
-                  type="submit"
-                  className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-sm transition-all shadow-lg shadow-indigo-600/30 border border-indigo-400/30 flex items-center justify-center gap-2 active:scale-[0.98] mt-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Masuk ke Aplikasi</span>
-                </button>
-              </form>
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                Nama Pengguna / Username / NPSN
+              </label>
+              <input
+                id="input-login-username"
+                type="text"
+                required
+                autoFocus
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Masukkan username atau NPSN"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md transition-all"
+              />
             </div>
-          ) : (
-            /* Register Form */
-            <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Jenjang Pendidikan *
-                  </label>
-                  <select
-                    required
-                    value={regForm.jenjang}
-                    onChange={(e) => setRegForm({ ...regForm, jenjang: e.target.value as JenjangType })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  >
-                    {JENJANG_LIST.map(j => (
-                      <option key={j} value={j} className="bg-slate-900 text-white">{j}</option>
-                    ))}
-                  </select>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    NPSN Sekolah *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.npsn}
-                    onChange={(e) => setRegForm({ ...regForm, npsn: e.target.value })}
-                    placeholder="Contoh: 69758462"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                Kata Sandi
+              </label>
+              <input
+                id="input-login-password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md transition-all"
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                  Nama Satuan Pendidikan / Sekolah *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={regForm.namaSekolah}
-                  onChange={(e) => setRegForm({ ...regForm, namaSekolah: e.target.value })}
-                  placeholder="Contoh: SMK MIFTAHUL HUDA II JATINAGARA"
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Nama Kepala Sekolah / Pengusul *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.nama}
-                    onChange={(e) => setRegForm({ ...regForm, nama: e.target.value })}
-                    placeholder="Nama lengkap & gelar"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    No. Handphone / WhatsApp Aktif *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={regForm.noHp}
-                    onChange={(e) => setRegForm({ ...regForm, noHp: e.target.value })}
-                    placeholder="081234567890"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Kabupaten / Kota *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.kabupaten}
-                    onChange={(e) => setRegForm({ ...regForm, kabupaten: e.target.value })}
-                    placeholder="Kabupaten Ciamis / Tasikmalaya"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Provinsi *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.provinsi}
-                    onChange={(e) => setRegForm({ ...regForm, provinsi: e.target.value })}
-                    placeholder="JAWA BARAT"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-white/10">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Username Akun *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={regForm.username}
-                    onChange={(e) => setRegForm({ ...regForm, username: e.target.value })}
-                    placeholder="smk_namasekolah"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Kata Sandi *
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={regForm.password}
-                    onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Ulangi Sandi *
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={regForm.confirmPassword}
-                    onChange={(e) => setRegForm({ ...regForm, confirmPassword: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-sm transition-all shadow-lg shadow-indigo-600/30 border border-indigo-400/30 flex items-center justify-center gap-2 mt-4 active:scale-[0.98]"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>Daftarkan Akun Sekolah Sekarang</span>
-              </button>
-            </form>
-          )}
-
+            <button
+              id="btn-submit-login"
+              type="submit"
+              className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-sm transition-all shadow-lg shadow-indigo-600/30 border border-indigo-400/30 flex items-center justify-center gap-2 active:scale-[0.98] mt-2"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Masuk ke Aplikasi</span>
+            </button>
+          </form>
         </div>
 
       </div>

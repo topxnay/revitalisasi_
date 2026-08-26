@@ -32,7 +32,8 @@ import {
 
 import { 
   User, 
-  PengajuanRevitalisasi 
+  PengajuanRevitalisasi,
+  BantuanCatalogItem 
 } from './types';
 import { 
   getStoredCurrentUser, 
@@ -44,7 +45,11 @@ import {
   saveProposalToStorage, 
   deleteProposalFromStorage, 
   resetToInitialData,
-  toggleUserStatus
+  toggleUserStatus,
+  getStoredCatalog,
+  saveCatalogItemToStorage,
+  deleteCatalogItemFromStorage,
+  resetCatalogToDefault
 } from './utils/storage';
 
 export function App() {
@@ -52,6 +57,7 @@ export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => getStoredCurrentUser());
   const [users, setUsers] = useState<User[]>(() => getStoredUsers());
   const [proposals, setProposals] = useState<PengajuanRevitalisasi[]>(() => getStoredProposals());
+  const [catalog, setCatalog] = useState<BantuanCatalogItem[]>(() => getStoredCatalog());
   
   // Navigation / View State
   const [activeView, setActiveView] = useState<'landing' | 'admin' | 'user' | 'form'>(() => {
@@ -121,12 +127,30 @@ export function App() {
 
   const handleResetData = () => {
     const { users: newUsers, proposals: newProposals } = resetToInitialData();
+    const defaultCat = resetCatalogToDefault();
     setUsers(newUsers);
     setProposals(newProposals);
+    setCatalog(defaultCat);
     const updatedUser = newUsers.find(u => u.id === currentUser?.id) || null;
     setCurrentUser(updatedUser);
     setStoredCurrentUser(updatedUser);
-    alert('Data sistem berhasil direset ke data awal master!');
+    alert('Data sistem dan katalog biaya satuan berhasil direset ke standar awal Kemendikbud!');
+  };
+
+  // Catalog Handlers
+  const handleSaveCatalogItem = (item: BantuanCatalogItem) => {
+    const updated = saveCatalogItemToStorage(item);
+    setCatalog(updated);
+  };
+
+  const handleDeleteCatalogItem = (itemId: string) => {
+    const updated = deleteCatalogItemFromStorage(itemId);
+    setCatalog(updated);
+  };
+
+  const handleResetCatalog = () => {
+    const updated = resetCatalogToDefault();
+    setCatalog(updated);
   };
 
   // Proposal Operations
@@ -250,6 +274,7 @@ export function App() {
           <LandingPage
             proposals={proposals}
             currentUser={currentUser}
+            catalog={catalog}
             onOpenLogin={(role) => {
               setInitialRoleLogin(role);
               setIsLoginModalOpen(true);
@@ -264,6 +289,10 @@ export function App() {
             currentUser={currentUser}
             proposals={proposals}
             users={users}
+            catalog={catalog}
+            onSaveCatalogItem={handleSaveCatalogItem}
+            onDeleteCatalogItem={handleDeleteCatalogItem}
+            onResetCatalog={handleResetCatalog}
             onOpenCreateUser={() => {
               setEditingUser(null);
               setIsUserModalOpen(true);
@@ -301,6 +330,7 @@ export function App() {
             onSaveProposal={handleSaveProposal}
             onCancel={() => setActiveView(currentUser.role === 'admin' ? 'admin' : 'user')}
             allProposals={proposals}
+            catalog={catalog}
           />
         )}
       </main>

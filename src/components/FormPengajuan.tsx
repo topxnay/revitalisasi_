@@ -25,7 +25,8 @@ import {
   User, 
   JenjangType, 
   StatusLahanType, 
-  BantuanItemSelection 
+  BantuanItemSelection,
+  BantuanCatalogItem 
 } from '../types';
 import { 
   JENJANG_LIST, 
@@ -34,7 +35,7 @@ import {
   JENJANG_COLORS 
 } from '../data/defaultCatalog';
 import { formatRupiah } from '../utils/excelExport';
-import { generateRegistrationNumber } from '../utils/storage';
+import { generateRegistrationNumber, getStoredCatalog } from '../utils/storage';
 
 interface FormPengajuanProps {
   currentUser: User;
@@ -42,6 +43,7 @@ interface FormPengajuanProps {
   onSaveProposal: (proposal: PengajuanRevitalisasi) => void;
   onCancel: () => void;
   allProposals: PengajuanRevitalisasi[];
+  catalog?: BantuanCatalogItem[];
 }
 
 export const FormPengajuan: React.FC<FormPengajuanProps> = ({
@@ -49,8 +51,10 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
   editingProposal,
   onSaveProposal,
   onCancel,
-  allProposals = []
+  allProposals = [],
+  catalog
 }) => {
+  const activeCatalog = catalog || getStoredCatalog();
   const [step, setStep] = useState<number>(1);
   const [isSuccessSubmitted, setIsSuccessSubmitted] = useState(false);
 
@@ -136,6 +140,32 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
     .map(item => `${item.quantity} ${item.name}`)
     .join(', ');
 
+  const handleNominalChange = (itemId: string, newNominal: number) => {
+    if (newNominal < 0) return;
+    setBantuanItems(prev => prev.map(item => {
+      if (item.itemId === itemId) {
+        return {
+          ...item,
+          nominalSatuan: newNominal,
+          total: item.quantity * newNominal
+        };
+      }
+      return item;
+    }));
+  };
+
+  const handleItemNameChange = (itemId: string, newName: string) => {
+    setBantuanItems(prev => prev.map(item => {
+      if (item.itemId === itemId) {
+        return {
+          ...item,
+          name: newName
+        };
+      }
+      return item;
+    }));
+  };
+
   const handleQuantityChange = (itemId: string, newQty: number) => {
     if (newQty < 0) return;
     setBantuanItems(prev => {
@@ -155,7 +185,7 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
     });
   };
 
-  const handleAddCatalogItem = (catalogItem: typeof STANDARD_CATALOG[0]) => {
+  const handleAddCatalogItem = (catalogItem: BantuanCatalogItem) => {
     setBantuanItems(prev => {
       const existing = prev.find(i => i.itemId === catalogItem.id);
       if (existing) {
@@ -615,11 +645,16 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
 
             {/* Quick Catalog Addition Buttons */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                Pilih Komponen Standar dari Katalog Bantuan:
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Pilih Komponen Standar dari Katalog Bantuan:
+                </label>
+                <span className="text-[11px] text-slate-400">
+                  Klik untuk menambahkan ke daftar usulan
+                </span>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                {STANDARD_CATALOG.filter(c => !c.jenjangApplicable || c.jenjangApplicable.includes(jenjang)).map(cat => {
+                {activeCatalog.filter(c => !c.jenjangApplicable || c.jenjangApplicable.includes(jenjang)).map(cat => {
                   const currentSelection = bantuanItems.find(i => i.itemId === cat.id);
                   return (
                     <button
@@ -628,7 +663,7 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                       onClick={() => handleAddCatalogItem(cat)}
                       className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between backdrop-blur-md ${
                         currentSelection && currentSelection.quantity > 0
-                          ? 'border-indigo-400/50 bg-indigo-600/30 text-white shadow-sm'
+                          ? 'border-indigo-400/50 bg-indigo-600/30 text-white shadow-sm ring-1 ring-indigo-500/30'
                           : 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-300'
                       }`}
                     >
@@ -639,9 +674,9 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                         </div>
                       </div>
                       <div className="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
-                        <span>+ Tambah</span>
+                        <span className="text-indigo-300 font-medium">+ Tambah</span>
                         {currentSelection && currentSelection.quantity > 0 && (
-                          <span className="px-2 py-0.2 bg-indigo-600 text-white rounded-full font-bold">
+                          <span className="px-2 py-0.5 bg-indigo-600 text-white rounded-full font-bold text-[10px]">
                             {currentSelection.quantity} {cat.unit}
                           </span>
                         )}
@@ -655,10 +690,15 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
             {/* Active Items Table (Page 2 format: Menu | Nominal | Jumlah | Total) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Tabel Rincian Usulan Bantuan (Format Dokumen):
-                </label>
-                <span className="text-xs text-slate-400 font-medium">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    Tabel Rincian Usulan Bantuan (Format Dokumen):
+                  </label>
+                  <p className="text-[11px] text-slate-400">
+                    Nominal satuan dan jumlah unit dapat diubah / diinput secara manual sesuai kebutuhan RAB sekolah
+                  </p>
+                </div>
+                <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl">
                   {bantuanItems.length} Komponen Dipilih
                 </span>
               </div>
@@ -667,58 +707,81 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-white/10 text-slate-200 font-semibold border-b border-white/10">
-                      <th className="py-3 px-3">No</th>
-                      <th className="py-3 px-3">Menu / Komponen Bantuan</th>
-                      <th className="py-3 px-3">Nominal Satuan</th>
-                      <th className="py-3 px-3 text-center">Jumlah (Unit)</th>
-                      <th className="py-3 px-3 text-right">Total Biaya (Rp)</th>
-                      <th className="py-3 px-3 text-center w-12">Aksi</th>
+                      <th className="py-3.5 px-3 w-10">No</th>
+                      <th className="py-3.5 px-3 min-w-[180px]">Menu / Komponen Bantuan</th>
+                      <th className="py-3.5 px-3 min-w-[170px]">Nominal Satuan (Rp)</th>
+                      <th className="py-3.5 px-3 text-center min-w-[120px]">Jumlah (Unit)</th>
+                      <th className="py-3.5 px-3 text-right min-w-[140px]">Total Biaya (Rp)</th>
+                      <th className="py-3.5 px-3 text-center w-12">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-slate-200">
                     {bantuanItems.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-slate-400">
-                          Belum ada komponen bantuan yang dipilih. Klik tombol katalog di atas.
+                          Belum ada komponen bantuan yang dipilih. Klik tombol katalog di atas atau tambahkan komponen khusus.
                         </td>
                       </tr>
                     ) : (
                       bantuanItems.map((item, idx) => (
-                        <tr key={item.itemId} className="hover:bg-white/5">
+                        <tr key={item.itemId} className="hover:bg-white/5 transition-colors">
                           <td className="py-3 px-3 font-bold text-slate-400">{idx + 1}</td>
-                          <td className="py-3 px-3 font-bold text-white">{item.name}</td>
-                          <td className="py-3 px-3 font-mono-code text-slate-300">
-                            {formatRupiah(item.nominalSatuan)}
+                          <td className="py-3 px-3">
+                            <div className="font-bold text-white text-xs">{item.name}</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="relative flex items-center">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-mono-code font-bold text-emerald-400">
+                                Rp
+                              </span>
+                              <input
+                                type="number"
+                                min={0}
+                                step={1000000}
+                                value={item.nominalSatuan}
+                                onChange={(e) => handleNominalChange(item.itemId, Math.max(0, Number(e.target.value) || 0))}
+                                title="Input nominal satuan manual"
+                                className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-slate-800/80 border border-white/20 text-emerald-400 font-mono-code font-bold text-xs focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                              />
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono-code block mt-0.5">
+                              {formatRupiah(item.nominalSatuan)}
+                            </span>
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <div className="inline-flex items-center gap-1.5 bg-white/10 p-1 rounded-xl border border-white/15">
+                            <div className="inline-flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/15">
                               <button
                                 type="button"
                                 onClick={() => handleQuantityChange(item.itemId, item.quantity - 1)}
-                                className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                                className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition-colors"
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <span className="w-8 text-center font-bold font-mono-code text-xs text-white">
-                                {item.quantity}
-                              </span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={item.quantity}
+                                onChange={(e) => handleQuantityChange(item.itemId, Math.max(1, parseInt(e.target.value) || 1))}
+                                className="w-10 text-center font-bold font-mono-code text-xs text-white bg-transparent border-0 focus:ring-0 p-0"
+                              />
                               <button
                                 type="button"
                                 onClick={() => handleQuantityChange(item.itemId, item.quantity + 1)}
-                                className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold"
+                                className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition-colors"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
                             </div>
                           </td>
-                          <td className="py-3 px-3 text-right font-mono-code font-bold text-emerald-400">
+                          <td className="py-3 px-3 text-right font-mono-code font-bold text-emerald-400 text-xs">
                             {formatRupiah(item.total)}
                           </td>
                           <td className="py-3 px-3 text-center">
                             <button
                               type="button"
                               onClick={() => handleQuantityChange(item.itemId, 0)}
-                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
+                              title="Hapus komponen usulan ini"
+                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -727,10 +790,10 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                       ))
                     )}
                     <tr className="bg-white/10 font-bold border-t border-white/15">
-                      <td colSpan={4} className="py-3.5 px-3 text-slate-200 uppercase">
+                      <td colSpan={4} className="py-3.5 px-3 text-slate-200 uppercase text-xs">
                         Total Nilai Pengajuan Revitalisasi:
                       </td>
-                      <td className="py-3.5 px-3 text-right font-mono-code text-base text-emerald-400">
+                      <td className="py-3.5 px-3 text-right font-mono-code text-sm sm:text-base text-emerald-400 font-extrabold">
                         {formatRupiah(totalNilaiPengajuan)}
                       </td>
                       <td></td>

@@ -21,13 +21,18 @@ import {
   FileText, 
   MapPin,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  RotateCcw,
+  DollarSign,
+  Check,
+  X
 } from 'lucide-react';
 import { 
   PengajuanRevitalisasi, 
   User, 
   JenjangType, 
-  StatusPengajuan 
+  StatusPengajuan,
+  BantuanCatalogItem 
 } from '../types';
 import { 
   JENJANG_LIST, 
@@ -39,11 +44,16 @@ import {
   exportRekapitulasiExcel, 
   exportSingleProposalRAB 
 } from '../utils/excelExport';
+import { CatalogItemModal } from './CatalogItemModal';
 
 interface AdminDashboardProps {
   currentUser: User;
   proposals: PengajuanRevitalisasi[];
   users: User[];
+  catalog?: BantuanCatalogItem[];
+  onSaveCatalogItem?: (item: BantuanCatalogItem) => void;
+  onDeleteCatalogItem?: (itemId: string) => void;
+  onResetCatalog?: () => void;
   onOpenCreateUser: () => void;
   onOpenEditUser: (user: User) => void;
   onDeleteUser: (userId: string) => void;
@@ -60,6 +70,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   proposals = [],
   users = [],
+  catalog = STANDARD_CATALOG,
+  onSaveCatalogItem,
+  onDeleteCatalogItem,
+  onResetCatalog,
   onOpenCreateUser,
   onOpenEditUser,
   onDeleteUser,
@@ -76,6 +90,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [filterStatus, setFilterStatus] = useState<StatusPengajuan | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  // Catalog State
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
+  const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<'ALL' | 'ruang_utama' | 'ruang_penunjang' | 'sarana_utilitas' | 'rehab'>('ALL');
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [editingCatalogItem, setEditingCatalogItem] = useState<BantuanCatalogItem | null>(null);
+  const [inlineEditNominalId, setInlineEditNominalId] = useState<string | null>(null);
+  const [inlineEditNominalValue, setInlineEditNominalValue] = useState<number>(0);
 
   // Stats calculation
   const totalSekolah = proposals.length;
@@ -724,58 +746,247 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* TAB 4: KATALOG STANDAR BIAYA */}
       {activeTab === 'catalog' && (
-        <div className="bg-white/5 backdrop-blur-2xl p-6 rounded-3xl border border-white/15 shadow-2xl space-y-4 text-slate-100">
-          <div className="flex items-center justify-between">
+        <div className="bg-white/5 backdrop-blur-2xl p-6 rounded-3xl border border-white/15 shadow-2xl space-y-5 text-slate-100">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-bold text-white font-heading">
-                Katalog Standar Biaya Satuan Revitalisasi Sarpras (Page 2)
-              </h3>
-              <p className="text-xs text-slate-400">
-                Digunakan sebagai acuan baku kalkulator anggaran seluruh jenjang pendidikan
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white font-heading">
+                  Katalog Standar Biaya Satuan Revitalisasi Sarpras (Page 2)
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                  {catalog.length} Komponen
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Kelola standar acuan baku biaya sarpras yang otomatis digunakan dalam kalkulator anggaran pengusul
               </p>
             </div>
-            <button
-              onClick={() => exportRekapitulasiExcel(proposals)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 border border-emerald-400/30 transition-all"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Unduh Format Lengkap</span>
-            </button>
+            
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                id="btn-add-catalog-item"
+                onClick={() => {
+                  setEditingCatalogItem(null);
+                  setIsCatalogModalOpen(true);
+                }}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30 transition-all active:scale-[0.98]"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tambah Komponen</span>
+              </button>
+
+              {onResetCatalog && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Reset katalog biaya satuan ke standar baku bawaan Kemendikbud?')) {
+                      onResetCatalog();
+                    }
+                  }}
+                  title="Kembalikan nilai katalog ke standar awal"
+                  className="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl text-xs font-bold flex items-center gap-1.5 border border-white/10 transition-all"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Reset Standar Baku</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => exportRekapitulasiExcel(proposals)}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 border border-emerald-400/30 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Unduh Excel</span>
+              </button>
+            </div>
           </div>
 
+          {/* Search and Category Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={catalogSearchQuery}
+                onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                placeholder="Cari nama komponen bantuan atau spesifikasi..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
+              />
+              {catalogSearchQuery && (
+                <button
+                  onClick={() => setCatalogSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs text-slate-400 shrink-0">Kategori:</span>
+              <select
+                value={catalogCategoryFilter}
+                onChange={(e) => setCatalogCategoryFilter(e.target.value as any)}
+                className="px-3.5 py-2.5 rounded-2xl bg-slate-800/60 border border-white/15 text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
+              >
+                <option value="ALL">Semua Kategori</option>
+                <option value="ruang_utama">Ruang Utama</option>
+                <option value="ruang_penunjang">Ruang Penunjang</option>
+                <option value="sarana_utilitas">Sarana & Utilitas</option>
+                <option value="rehab">Rehab & Pengecatan</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Catalog Table */}
           <div className="overflow-x-auto rounded-2xl border border-white/10">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-white/10 text-slate-200 font-semibold border-b border-white/10">
-                  <th className="py-3.5 px-4">No</th>
-                  <th className="py-3.5 px-4">Menu / Komponen</th>
+                  <th className="py-3.5 px-4 w-12">No</th>
+                  <th className="py-3.5 px-4">Menu / Komponen Bantuan</th>
                   <th className="py-3.5 px-4">Nominal Satuan (Rp)</th>
                   <th className="py-3.5 px-4">Satuan</th>
                   <th className="py-3.5 px-4">Kategori</th>
                   <th className="py-3.5 px-4">Deskripsi Spesifikasi Teknis</th>
+                  <th className="py-3.5 px-4 text-center w-24">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {STANDARD_CATALOG.map((cat, idx) => (
-                  <tr key={cat.id} className="hover:bg-white/5">
-                    <td className="py-3 px-4 font-bold text-slate-400">{idx + 1}</td>
-                    <td className="py-3 px-4 font-bold text-white">{cat.name}</td>
-                    <td className="py-3 px-4 font-mono-code font-bold text-emerald-400">
-                      {formatRupiah(cat.nominalSatuan)}
-                    </td>
-                    <td className="py-3 px-4 text-slate-300">{cat.unit}</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300 text-[10px] font-semibold uppercase">
-                        {cat.category.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">{cat.description}</td>
-                  </tr>
-                ))}
+                {catalog
+                  .filter((cat) => {
+                    const matchCategory = catalogCategoryFilter === 'ALL' || cat.category === catalogCategoryFilter;
+                    const q = catalogSearchQuery.trim().toLowerCase();
+                    const matchSearch = !q || cat.name.toLowerCase().includes(q) || cat.description.toLowerCase().includes(q) || cat.unit.toLowerCase().includes(q);
+                    return matchCategory && matchSearch;
+                  })
+                  .map((cat, idx) => (
+                    <tr key={cat.id} className="hover:bg-white/5 group transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-400">{idx + 1}</td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-white text-xs">{cat.name}</div>
+                        {cat.jenjangApplicable && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {cat.jenjangApplicable.map(j => (
+                              <span key={j} className="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[9px] font-semibold border border-indigo-500/30">
+                                {j}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {inlineEditNominalId === cat.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono-code font-bold text-emerald-400">Rp</span>
+                              <input
+                                type="number"
+                                min={0}
+                                step={1000000}
+                                autoFocus
+                                value={inlineEditNominalValue}
+                                onChange={(e) => setInlineEditNominalValue(Math.max(0, Number(e.target.value)))}
+                                className="w-32 pl-7 pr-2 py-1 rounded-xl bg-slate-900 border border-emerald-400 text-emerald-400 font-mono-code font-bold text-xs focus:ring-1 focus:ring-emerald-400"
+                              />
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (onSaveCatalogItem) {
+                                  onSaveCatalogItem({
+                                    ...cat,
+                                    nominalSatuan: inlineEditNominalValue
+                                  });
+                                }
+                                setInlineEditNominalId(null);
+                              }}
+                              className="p-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white"
+                              title="Simpan"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setInlineEditNominalId(null)}
+                              className="p-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300"
+                              title="Batal"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono-code font-bold text-emerald-400 text-xs">
+                              {formatRupiah(cat.nominalSatuan)}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setInlineEditNominalId(cat.id);
+                                setInlineEditNominalValue(cat.nominalSatuan);
+                              }}
+                              title="Ubah nominal cepat"
+                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-opacity"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-300">{cat.unit}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300 text-[10px] font-semibold uppercase whitespace-nowrap">
+                          {cat.category.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-400 max-w-xs">{cat.description || '-'}</td>
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingCatalogItem(cat);
+                              setIsCatalogModalOpen(true);
+                            }}
+                            title="Edit Komponen Lengkap"
+                            className="p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-xl transition-all"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          {onDeleteCatalogItem && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Hapus komponen "${cat.name}" dari katalog standar?`)) {
+                                  onDeleteCatalogItem(cat.id);
+                                }
+                              }}
+                              title="Hapus Komponen"
+                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
         </div>
+      )}
+
+      {/* Catalog Item Edit / Create Modal */}
+      {isCatalogModalOpen && (
+        <CatalogItemModal
+          isOpen={isCatalogModalOpen}
+          onClose={() => {
+            setIsCatalogModalOpen(false);
+            setEditingCatalogItem(null);
+          }}
+          onSave={(item) => {
+            if (onSaveCatalogItem) {
+              onSaveCatalogItem(item);
+            }
+          }}
+          editingItem={editingCatalogItem}
+        />
       )}
 
     </div>
