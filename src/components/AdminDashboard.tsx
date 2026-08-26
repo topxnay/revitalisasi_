@@ -58,8 +58,8 @@ interface AdminDashboardProps {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
-  proposals,
-  users,
+  proposals = [],
+  users = [],
   onOpenCreateUser,
   onOpenEditUser,
   onDeleteUser,
@@ -78,37 +78,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [userSearchQuery, setUserSearchQuery] = useState('');
 
   // Stats calculation
-  const safeProposals = Array.isArray(proposals) ? proposals : [];
-  const safeUsers = Array.isArray(users) ? users : [];
-
-  const totalSekolah = safeProposals.length;
-  const totalDana = safeProposals.reduce((acc, p) => acc + (p.nilaiPengajuan || 0), 0);
-  const totalDisetujui = safeProposals.filter(p => p.statusPengajuan === 'disetujui').length;
-  const totalDiverifikasi = safeProposals.filter(p => p.statusPengajuan === 'diverifikasi').length;
+  const totalSekolah = proposals.length;
+  const totalDana = proposals.reduce((acc, p) => acc + p.nilaiPengajuan, 0);
+  const totalDisetujui = proposals.filter(p => p.statusPengajuan === 'disetujui').length;
+  const totalDiverifikasi = proposals.filter(p => p.statusPengajuan === 'diverifikasi').length;
 
   // Filtered Proposals
-  const filteredProposals = safeProposals.filter(p => {
+  const filteredProposals = proposals.filter(p => {
     const matchJenjang = filterJenjang === 'ALL' || p.jenjang === filterJenjang;
     const matchStatus = filterStatus === 'ALL' || p.statusPengajuan === filterStatus;
     const q = searchQuery.trim().toLowerCase();
     const matchSearch = !q || 
-      (p.namaSekolah || '').toLowerCase().includes(q) ||
-      (p.npsn || '').toLowerCase().includes(q) ||
-      (p.kabupaten || '').toLowerCase().includes(q) ||
-      (p.nomorRegistrasi || '').toLowerCase().includes(q) ||
-      (p.namaKepalaSekolah || '').toLowerCase().includes(q);
+      p.namaSekolah.toLowerCase().includes(q) ||
+      p.npsn.toLowerCase().includes(q) ||
+      p.kabupaten.toLowerCase().includes(q) ||
+      p.nomorRegistrasi.toLowerCase().includes(q) ||
+      p.namaKepalaSekolah.toLowerCase().includes(q);
     return matchJenjang && matchStatus && matchSearch;
   });
 
   // Filtered Users
-  const filteredUsers = safeUsers.filter(u => {
+  const filteredUsers = users.filter(u => {
     const q = userSearchQuery.trim().toLowerCase();
     return !q || 
-      (u.nama || '').toLowerCase().includes(q) ||
-      (u.username || '').toLowerCase().includes(q) ||
+      u.nama.toLowerCase().includes(q) ||
+      u.username.toLowerCase().includes(q) ||
       (u.namaSekolah && u.namaSekolah.toLowerCase().includes(q)) ||
       (u.npsn && u.npsn.includes(q)) ||
-      (u.email && u.email.toLowerCase().includes(q));
+      u.email.toLowerCase().includes(q);
   });
 
   return (
@@ -649,8 +646,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {JENJANG_LIST.map((jenjang, idx) => {
-                      const list = safeProposals.filter(p => p.jenjang === jenjang);
-                      const subTotal = list.reduce((sum, item) => sum + (item.nilaiPengajuan || 0), 0);
+                      const list = proposals.filter(p => p.jenjang === jenjang);
+                      const subTotal = list.reduce((sum, item) => sum + item.nilaiPengajuan, 0);
                       return (
                         <tr key={jenjang} className="hover:bg-white/5">
                           <td className="py-2.5 px-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
@@ -672,7 +669,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         TOTAL KESELURUHAN (SEMUA JENJANG)
                       </td>
                       <td className="py-3.5 px-3.5 text-center text-amber-300 text-sm">
-                        {safeProposals.length} Sekolah
+                        {proposals.length} Sekolah
                       </td>
                       <td className="py-3.5 px-3.5 text-right font-mono-code text-emerald-400 text-sm">
                         {formatRupiah(totalDana)}
@@ -694,13 +691,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="space-y-4 pt-2">
                 {[
-                  { status: 'disetujui', label: 'Disetujui / Lolos Penetapan', color: 'bg-emerald-500', count: safeProposals.filter(p => p.statusPengajuan === 'disetujui').length },
-                  { status: 'diverifikasi', label: 'Sedang Diverifikasi Tim Teknis', color: 'bg-blue-500', count: safeProposals.filter(p => p.statusPengajuan === 'diverifikasi').length },
-                  { status: 'diajukan', label: 'Usulan Masuk Baru (Diajukan)', color: 'bg-indigo-500', count: safeProposals.filter(p => p.statusPengajuan === 'diajukan').length },
-                  { status: 'perlu_perbaikan', label: 'Perlu Revisi / Perbaikan Berkas', color: 'bg-amber-500', count: safeProposals.filter(p => p.statusPengajuan === 'perlu_perbaikan').length },
-                  { status: 'draft', label: 'Draft Sekolah', color: 'bg-slate-400', count: safeProposals.filter(p => p.statusPengajuan === 'draft').length }
+                  { status: 'disetujui', label: 'Disetujui / Lolos Penetapan', color: 'bg-emerald-500', count: proposals.filter(p => p.statusPengajuan === 'disetujui').length },
+                  { status: 'diverifikasi', label: 'Sedang Diverifikasi Tim Teknis', color: 'bg-blue-500', count: proposals.filter(p => p.statusPengajuan === 'diverifikasi').length },
+                  { status: 'diajukan', label: 'Usulan Masuk Baru (Diajukan)', color: 'bg-indigo-500', count: proposals.filter(p => p.statusPengajuan === 'diajukan').length },
+                  { status: 'perlu_perbaikan', label: 'Perlu Revisi / Perbaikan Berkas', color: 'bg-amber-500', count: proposals.filter(p => p.statusPengajuan === 'perlu_perbaikan').length },
+                  { status: 'draft', label: 'Draft Sekolah', color: 'bg-slate-400', count: proposals.filter(p => p.statusPengajuan === 'draft').length }
                 ].map(s => {
-                  const pct = safeProposals.length > 0 ? (s.count / safeProposals.length) * 100 : 0;
+                  const pct = proposals.length > 0 ? (s.count / proposals.length) * 100 : 0;
                   return (
                     <div key={s.status} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">

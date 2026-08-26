@@ -30,10 +30,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onLoginSuccess,
   users,
   registeredUsers,
-  onRegisterUser,
-  initialRole = 'user'
+  onRegisterUser
 }) => {
-  const userList = Array.isArray(users) ? users : (Array.isArray(registeredUsers) ? registeredUsers : []);
+  const userList = users || registeredUsers || [];
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -62,7 +61,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     const target = userList.find(
       u => u.username.toLowerCase() === username.trim().toLowerCase() && 
-           (u.password === password || (!u.password && password === '123456') || password === 'admin2027' || password === 'smk2027')
+           u.password === password
     );
 
     if (target) {
@@ -73,13 +72,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onLoginSuccess(target);
       onClose();
     } else {
-      setErrorMessage('Nama pengguna atau kata sandi tidak sesuai. Silakan gunakan tombol demo di bawah.');
+      setErrorMessage('Nama pengguna atau kata sandi tidak sesuai.');
     }
-  };
-
-  const handleQuickLogin = (targetUser: User) => {
-    onLoginSuccess(targetUser);
-    onClose();
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -125,12 +119,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     onClose();
   };
 
-  const adminUsers = userList.filter(u => u.role === 'admin');
-  const schoolUsers = userList.filter(u => u.role === 'user');
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200 text-slate-100">
+      <div className="relative w-full max-w-xl bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200 text-slate-100">
         
         {/* Header with Title & Close */}
         <div className="bg-white/5 border-b border-white/10 p-6 sm:p-7 relative backdrop-blur-md">
@@ -151,7 +142,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 Masuk Sistem SIM-REVIT 2027
               </h2>
               <p className="text-xs sm:text-sm text-slate-400">
-                Pilih Akun Role Admin Pusat atau Role Pengguna Sekolah
+                Silakan masuk dengan akun Admin atau Akun Satuan Pendidikan
               </p>
             </div>
           </div>
@@ -208,20 +199,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Contoh: admin atau smk_miftahul atau 20263295"
+                    placeholder="Contoh: admin atau username sekolah"
                     className="w-full px-4 py-3 rounded-2xl bg-slate-800/60 border border-white/15 text-slate-100 placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
                   />
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                      Kata Sandi
-                    </label>
-                    <span className="text-xs text-slate-400">
-                      Default Demo: admin2027 / smk2027
-                    </span>
-                  </div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Kata Sandi
+                  </label>
                   <input
                     id="input-login-password"
                     type="password"
@@ -236,87 +222,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <button
                   id="btn-submit-login"
                   type="submit"
-                  className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-sm transition-all shadow-lg shadow-indigo-600/30 border border-indigo-400/30 flex items-center justify-center gap-2 active:scale-[0.98]"
+                  className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-sm transition-all shadow-lg shadow-indigo-600/30 border border-indigo-400/30 flex items-center justify-center gap-2 active:scale-[0.98] mt-2"
                 >
                   <LogIn className="w-4 h-4" />
                   <span>Masuk ke Aplikasi</span>
                 </button>
               </form>
-
-              {/* Quick 1-Click Demo Accounts Section */}
-              <div className="pt-6 border-t border-white/10">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                    Akses Cepat 1-Klik Akun Demo (Sesuai Dokumen)
-                  </span>
-                </div>
-
-                {/* Role 1: Admin */}
-                <div className="mb-4">
-                  <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Role 1: Admin Pusat (Verifikasi, Download Excel, Tambah User)</span>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    {adminUsers.map(admin => (
-                      <button
-                        key={admin.id}
-                        type="button"
-                        onClick={() => handleQuickLogin(admin)}
-                        className="w-full p-3 text-left rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 backdrop-blur-md transition-all flex items-center justify-between group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-amber-500/30 text-amber-300 border border-amber-500/40 flex items-center justify-center font-bold text-xs">
-                            ADM
-                          </div>
-                          <div>
-                            <div className="text-xs font-bold text-white group-hover:text-amber-200">
-                              {admin.nama}
-                            </div>
-                            <div className="text-[11px] text-slate-400">
-                              Username: <span className="font-mono-code font-bold text-slate-200">admin</span> | Role: Admin Pusat
-                            </div>
-                          </div>
-                        </div>
-                        <span className="text-xs font-bold text-amber-300 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                          Masuk <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Role 2: User Sekolah (From PDF Data) */}
-                <div>
-                  <div className="text-[11px] font-bold text-indigo-300 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                    <School className="w-3.5 h-3.5" />
-                    <span>Role 2: Pengguna Sekolah / Pengusul (Form Isian Bantuan & Berkas)</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                    {schoolUsers.slice(0, 6).map(sch => (
-                      <button
-                        key={sch.id}
-                        type="button"
-                        onClick={() => handleQuickLogin(sch)}
-                        className="p-3 text-left rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-indigo-400/30 backdrop-blur-md transition-all flex items-center justify-between group"
-                      >
-                        <div>
-                          <div className="text-xs font-bold text-white group-hover:text-indigo-300 truncate max-w-[200px]">
-                            {sch.namaSekolah || sch.nama}
-                          </div>
-                          <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                            <span className="font-semibold text-indigo-300">{sch.jenjang}</span>
-                            <span>• NPSN: {sch.npsn || '-'}</span>
-                          </div>
-                        </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
             </div>
           ) : (
             /* Register Form */

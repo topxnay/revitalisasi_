@@ -19,10 +19,9 @@ export function exportRekapitulasiExcel(
   const wb = XLSX.utils.book_new();
 
   // Filter if needed
-  const safeProposals = Array.isArray(proposals) ? proposals : [];
   const targetProposals = filterJenjang && filterJenjang !== 'ALL'
-    ? safeProposals.filter(p => p.jenjang === filterJenjang)
-    : safeProposals;
+    ? proposals.filter(p => p.jenjang === filterJenjang)
+    : proposals;
 
   // Build Primary Rekapitulasi Sheet matching PDF format
   const rows: any[][] = [];

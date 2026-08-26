@@ -29,7 +29,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   editingUser,
   existingUsers = []
 }) => {
-  const safeUsers = Array.isArray(existingUsers) ? existingUsers : [];
   const [formData, setFormData] = useState({
     id: '',
     username: '',
@@ -69,7 +68,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       setFormData({
         id: `usr_${Date.now()}`,
         username: '',
-        password: 'smk2027',
+        password: '',
         nama: '',
         role: 'user',
         email: '',
@@ -92,7 +91,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     setErrorMessage('');
 
     // Check duplicate username
-    const duplicate = safeUsers.find(
+    const duplicate = existingUsers.find(
       u => u.username.toLowerCase() === formData.username.trim().toLowerCase() && u.id !== formData.id
     );
 
@@ -102,7 +101,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }
 
     if (formData.role === 'user' && formData.npsn) {
-      const duplicateNpsn = safeUsers.find(
+      const duplicateNpsn = existingUsers.find(
         u => u.npsn === formData.npsn.trim() && u.id !== formData.id
       );
       if (duplicateNpsn) {
@@ -351,7 +350,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="smk2027"
+                placeholder="Masukkan kata sandi akun"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/60 border border-white/15 text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-md"
               />
             </div>

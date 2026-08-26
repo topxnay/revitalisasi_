@@ -32,7 +32,7 @@ interface UserDashboardProps {
 
 export const UserDashboard: React.FC<UserDashboardProps> = ({
   currentUser,
-  userProposals,
+  userProposals = [],
   onOpenCreateForm,
   onOpenEditForm,
   onOpenDetail,

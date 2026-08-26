@@ -33,7 +33,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenLogin,
   currentUser,
-  proposals,
+  proposals = [],
   onSelectProposalDetail,
   onNavigateToForm
 }) => {
@@ -42,14 +42,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // Search filter for public status tracker
   const searchResults = searchQuery.trim().length >= 3
-    ? (proposals || []).filter(p => 
-        (p.npsn || '').toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-        (p.namaSekolah || '').toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-        (p.nomorRegistrasi || '').toLowerCase().includes(searchQuery.trim().toLowerCase())
+    ? proposals.filter(p => 
+        p.npsn.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+        p.namaSekolah.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+        p.nomorRegistrasi.toLowerCase().includes(searchQuery.trim().toLowerCase())
       )
     : [];
 
-  const totalNilaiAll = (proposals || []).reduce((acc, p) => acc + (p.nilaiPengajuan || 0), 0);
+  const totalNilaiAll = proposals.reduce((acc, p) => acc + p.nilaiPengajuan, 0);
 
   return (
     <div className="space-y-12 pb-16">

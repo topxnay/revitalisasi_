@@ -170,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center gap-2.5">
                 <button
                   id="btn-open-login"
-                  onClick={() => onOpenLogin('user')}
+                  onClick={() => onOpenLogin()}
                   className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold rounded-2xl flex items-center gap-2 shadow-lg shadow-indigo-600/30 border border-indigo-400/30 transition-all active:scale-[0.98]"
                 >
                   <LogIn className="w-4 h-4" />
@@ -179,11 +179,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Reset Demo Button */}
+            {/* Reset Data Button */}
             <button
-              id="btn-reset-demo"
+              id="btn-reset-data"
               onClick={onResetData}
-              title="Reset Data Master Demo"
+              title="Reset Data Master Sistem"
               className="p-2.5 text-slate-400 hover:text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all"
             >
               <RotateCcw className="w-4 h-4" />

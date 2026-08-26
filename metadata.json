@@ -2,7 +2,5 @@
   "name": "Aplikasi Pengajuan Revitalisasi T.A. 2027",
   "description": "Sistem Informasi Pengajuan Program Revitalisasi Sarana Prasarana Sekolah Tahun Anggaran 2027 untuk Semua Jenjang (TK/PAUD/KOBER/SPS, SD, SMP, SMA/SMK, SLB, PKBM) dengan Manajemen Pengguna, Validasi Data, dan Ekspor Excel Resmi.",
   "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

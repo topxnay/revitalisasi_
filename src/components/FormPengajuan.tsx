@@ -49,7 +49,7 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
   editingProposal,
   onSaveProposal,
   onCancel,
-  allProposals
+  allProposals = []
 }) => {
   const [step, setStep] = useState<number>(1);
   const [isSuccessSubmitted, setIsSuccessSubmitted] = useState(false);
@@ -200,7 +200,7 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
     }
 
     const regNum = editingProposal?.nomorRegistrasi || 
-      generateRegistrationNumber(jenjang, (allProposals || []).filter(p => p.jenjang === jenjang).length);
+      generateRegistrationNumber(jenjang, allProposals.filter(p => p.jenjang === jenjang).length);
 
     const newProposal: PengajuanRevitalisasi = {
       id: editingProposal?.id || `prop_${Date.now()}`,

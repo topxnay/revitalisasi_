@@ -214,7 +214,7 @@ export function App() {
   };
 
   // Filter proposals belonging to current user
-  const userProposals = currentUser && Array.isArray(proposals)
+  const userProposals = currentUser
     ? proposals.filter(p => p.userId === currentUser.id || (currentUser.npsn && p.npsn === currentUser.npsn))
     : [];
 
