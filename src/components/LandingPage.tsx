@@ -69,18 +69,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs sm:text-sm font-semibold backdrop-blur-md">
             <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span>Penerimaan Usulan Program Revitalisasi Sekolah T.A. 2027</span>
+            <span>Penerimaan Usulan Program T.A. 2027</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-heading tracking-tight leading-tight sm:leading-tight">
-            Sistem Informasi Terpadu <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-teal-300 to-emerald-400">
-              Revitalisasi Sarpras 2027
+            SIM- REVIT ASPIRASI <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-teal-300 to-emerald-400 text-xl sm:text-3xl lg:text-4xl block mt-2 font-bold">
+              (Pengajuan Rehab, Renov dan RKB -ASPIRASI)
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            Portal pengajuan bantuan pembangunan Ruang Kelas Baru (RKB), Perpustakaan, Ruang Praktik Siswa (RPS), Laboratorium, Sanitasi/MCK, dan Sarpras Terpadu untuk <strong>Semua 7 Jenjang Satuan Pendidikan</strong>.
+            Portal pengajuan bantuan Rehabilitasi Bangunan, Renovasi Gedung, dan Ruang Kelas Baru (RKB) berbasis Aspirasi untuk <strong>Semua 7 Jenjang Satuan Pendidikan</strong>.
           </p>
 
           {/* Jenjang Badges Pill */}

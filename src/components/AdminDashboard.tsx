@@ -25,32 +25,41 @@ import {
   RotateCcw,
   DollarSign,
   Check,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import { 
   PengajuanRevitalisasi, 
   User, 
   JenjangType, 
   StatusPengajuan,
-  BantuanCatalogItem 
+  BantuanCatalogItem,
+  AppThemeConfig 
 } from '../types';
 import { 
   JENJANG_LIST, 
   JENJANG_COLORS, 
   STANDARD_CATALOG 
 } from '../data/defaultCatalog';
+import { DEFAULT_THEME } from '../data/themePresets';
 import { 
   formatRupiah, 
   exportRekapitulasiExcel, 
   exportSingleProposalRAB 
 } from '../utils/excelExport';
 import { CatalogItemModal } from './CatalogItemModal';
+import { AdminSettings } from './AdminSettings';
 
 interface AdminDashboardProps {
   currentUser: User;
   proposals: PengajuanRevitalisasi[];
   users: User[];
   catalog?: BantuanCatalogItem[];
+  theme?: AppThemeConfig;
+  onSaveTheme?: (theme: AppThemeConfig) => void;
+  onResetTheme?: () => void;
+  onBulkSetUserStatus?: (userIds: string[], status: 'active' | 'inactive') => void;
+  onSetAllSchoolsStatus?: (status: 'active' | 'inactive') => void;
   onSaveCatalogItem?: (item: BantuanCatalogItem) => void;
   onDeleteCatalogItem?: (itemId: string) => void;
   onResetCatalog?: () => void;
@@ -71,6 +80,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   proposals = [],
   users = [],
   catalog = STANDARD_CATALOG,
+  theme = DEFAULT_THEME,
+  onSaveTheme,
+  onResetTheme,
+  onBulkSetUserStatus,
+  onSetAllSchoolsStatus,
   onSaveCatalogItem,
   onDeleteCatalogItem,
   onResetCatalog,
@@ -85,7 +99,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDeleteProposal,
   onOpenCreateProposal
 }) => {
-  const [activeTab, setActiveTab] = useState<'proposals' | 'users' | 'analytics' | 'catalog'>('proposals');
+  const [activeTab, setActiveTab] = useState<'proposals' | 'users' | 'analytics' | 'catalog' | 'settings'>('proposals');
   const [filterJenjang, setFilterJenjang] = useState<JenjangType | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<StatusPengajuan | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -269,6 +283,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <Sparkles className="w-4 h-4 text-rose-400" />
           <span>Katalog Standar Biaya</span>
+        </button>
+
+        <button
+          id="tab-settings"
+          onClick={() => setActiveTab('settings')}
+          className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 backdrop-blur-md ${
+            activeTab === 'settings'
+              ? 'bg-indigo-600 text-white border border-indigo-400/40 shadow-lg shadow-indigo-600/30'
+              : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
+          }`}
+        >
+          <Settings className="w-4 h-4 text-sky-400" />
+          <span>Pengaturan</span>
+          <span 
+            className="w-2 h-2 rounded-full border border-white/50" 
+            style={{ backgroundColor: theme.bgColor }} 
+            title="Warna Latar Aktif"
+          />
         </button>
       </div>
 
@@ -970,6 +1002,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </table>
           </div>
         </div>
+      )}
+
+      {/* TAB 5: PENGATURAN SISTEM (KELOLA PENGGUNA AKTIF & WARNA BACKGROUND) */}
+      {activeTab === 'settings' && (
+        <AdminSettings
+          users={users}
+          onToggleUserStatus={onToggleUserStatus}
+          onOpenCreateUser={onOpenCreateUser}
+          onOpenEditUser={onOpenEditUser}
+          onDeleteUser={onDeleteUser}
+          onBulkSetUserStatus={onBulkSetUserStatus}
+          onSetAllSchoolsStatus={onSetAllSchoolsStatus}
+          currentTheme={theme}
+          onSaveTheme={(t) => onSaveTheme && onSaveTheme(t)}
+          onResetTheme={() => onResetTheme && onResetTheme()}
+        />
       )}
 
       {/* Catalog Item Edit / Create Modal */}

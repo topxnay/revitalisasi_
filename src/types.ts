@@ -106,3 +106,14 @@ export interface SystemStats {
   perJenjang: Record<JenjangType, number>;
   perStatus: Record<StatusPengajuan, number>;
 }
+
+export interface AppThemeConfig {
+  presetId: string;
+  name: string;
+  bgColor: string;
+  textColor: string;
+  ambientColor1: string;
+  ambientColor2: string;
+  ambientColor3: string;
+  isLightMode?: boolean;
+}

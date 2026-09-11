@@ -33,7 +33,8 @@ import {
 import { 
   User, 
   PengajuanRevitalisasi,
-  BantuanCatalogItem 
+  BantuanCatalogItem,
+  AppThemeConfig 
 } from './types';
 import { 
   getStoredCurrentUser, 
@@ -49,8 +50,14 @@ import {
   getStoredCatalog,
   saveCatalogItemToStorage,
   deleteCatalogItemFromStorage,
-  resetCatalogToDefault
+  resetCatalogToDefault,
+  getStoredTheme,
+  saveStoredTheme,
+  resetThemeToDefault,
+  bulkSetUserStatus,
+  setAllSchoolsUserStatus
 } from './utils/storage';
+import { DEFAULT_THEME, isColorLight } from './data/themePresets';
 
 export function App() {
   // Main State
@@ -58,6 +65,21 @@ export function App() {
   const [users, setUsers] = useState<User[]>(() => getStoredUsers());
   const [proposals, setProposals] = useState<PengajuanRevitalisasi[]>(() => getStoredProposals());
   const [catalog, setCatalog] = useState<BantuanCatalogItem[]>(() => getStoredCatalog());
+  const [theme, setTheme] = useState<AppThemeConfig>(() => getStoredTheme());
+  
+  const isLight = theme.isLightMode ?? isColorLight(theme.bgColor);
+
+  // Sync document body background color with selected theme & toggle theme-light class
+  useEffect(() => {
+    document.body.style.backgroundColor = theme.bgColor;
+    if (isLight) {
+      document.body.classList.add('theme-light');
+      document.documentElement.classList.add('theme-light');
+    } else {
+      document.body.classList.remove('theme-light');
+      document.documentElement.classList.remove('theme-light');
+    }
+  }, [theme.bgColor, isLight]);
   
   // Navigation / View State
   const [activeView, setActiveView] = useState<'landing' | 'admin' | 'user' | 'form'>(() => {
@@ -206,6 +228,35 @@ export function App() {
     }
   };
 
+  const handleBulkSetUserStatus = (userIds: string[], status: 'active' | 'inactive') => {
+    const updated = bulkSetUserStatus(userIds, status);
+    setUsers(updated);
+    if (currentUser && userIds.includes(currentUser.id)) {
+      const me = updated.find(u => u.id === currentUser.id);
+      if (me) setCurrentUser(me);
+    }
+  };
+
+  const handleSetAllSchoolsStatus = (status: 'active' | 'inactive') => {
+    const updated = setAllSchoolsUserStatus(status);
+    setUsers(updated);
+    if (currentUser && currentUser.role !== 'admin') {
+      const me = updated.find(u => u.id === currentUser.id);
+      if (me) setCurrentUser(me);
+    }
+  };
+
+  // Theme Handlers
+  const handleSaveTheme = (newTheme: AppThemeConfig) => {
+    const saved = saveStoredTheme(newTheme);
+    setTheme(saved);
+  };
+
+  const handleResetTheme = () => {
+    const def = resetThemeToDefault();
+    setTheme(def);
+  };
+
   // Navigation Trigger Helpers
   const handleOpenCreateForm = () => {
     if (!currentUser) {
@@ -243,16 +294,29 @@ export function App() {
     : [];
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
+    <div 
+      className={`min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative overflow-x-hidden transition-colors duration-500 ${isLight ? 'theme-light text-slate-800' : 'text-slate-100'}`}
+      style={{ backgroundColor: theme.bgColor }}
+    >
       
       {/* Frosted Glass Ambient Glow Orbs */}
-      <div className="fixed top-[-140px] left-[-140px] w-[460px] h-[460px] bg-indigo-600/25 rounded-full blur-[140px] pointer-events-none -z-10" />
-      <div className="fixed bottom-[-140px] right-[-140px] w-[500px] h-[500px] bg-emerald-600/20 rounded-full blur-[140px] pointer-events-none -z-10" />
-      <div className="fixed top-[45%] right-[10%] w-[380px] h-[380px] bg-cyan-600/15 rounded-full blur-[130px] pointer-events-none -z-10" />
+      <div 
+        className="fixed top-[-140px] left-[-140px] w-[460px] h-[460px] rounded-full blur-[140px] pointer-events-none -z-10 transition-colors duration-700" 
+        style={{ backgroundColor: theme.ambientColor1 }}
+      />
+      <div 
+        className="fixed bottom-[-140px] right-[-140px] w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none -z-10 transition-colors duration-700" 
+        style={{ backgroundColor: theme.ambientColor2 }}
+      />
+      <div 
+        className="fixed top-[45%] right-[10%] w-[380px] h-[380px] rounded-full blur-[130px] pointer-events-none -z-10 transition-colors duration-700" 
+        style={{ backgroundColor: theme.ambientColor3 }}
+      />
       
       {/* Top Navigation */}
       <Navbar
         currentUser={currentUser}
+        isLightMode={isLight}
         onOpenLogin={(role) => {
           setInitialRoleLogin(role);
           setIsLoginModalOpen(true);
@@ -290,6 +354,11 @@ export function App() {
             proposals={proposals}
             users={users}
             catalog={catalog}
+            theme={theme}
+            onSaveTheme={handleSaveTheme}
+            onResetTheme={handleResetTheme}
+            onBulkSetUserStatus={handleBulkSetUserStatus}
+            onSetAllSchoolsStatus={handleSetAllSchoolsStatus}
             onSaveCatalogItem={handleSaveCatalogItem}
             onDeleteCatalogItem={handleDeleteCatalogItem}
             onResetCatalog={handleResetCatalog}
@@ -339,9 +408,9 @@ export function App() {
       <footer className="no-print bg-slate-900/60 backdrop-blur-xl border-t border-white/10 py-6 text-center text-xs text-slate-400 relative z-10">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white tracking-wide">SIM-REVIT 2027</span>
+            <span className="font-bold text-white tracking-wide">SIM- REVIT ASPIRASI</span>
             <span className="text-slate-600">•</span>
-            <span>Sistem Informasi Terpadu Program Revitalisasi Sekolah</span>
+            <span>(Pengajuan Rehab, Renov dan RKB -ASPIRASI)</span>
           </div>
           <div className="text-slate-400">
             Cakupan 7 Jenjang: <span className="text-slate-200 font-medium">TK/PAUD, SD, SMP, SMA, SMK, SLB, & PKBM</span>

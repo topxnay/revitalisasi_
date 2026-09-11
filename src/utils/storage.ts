@@ -1,12 +1,14 @@
-import { PengajuanRevitalisasi, User, UserRole, JenjangType, BantuanCatalogItem } from '../types';
+import { PengajuanRevitalisasi, User, UserRole, JenjangType, BantuanCatalogItem, AppThemeConfig } from '../types';
 import { INITIAL_USERS, INITIAL_PENGAJUAN } from '../data/seedData';
 import { STANDARD_CATALOG } from '../data/defaultCatalog';
+import { DEFAULT_THEME, THEME_PRESETS } from '../data/themePresets';
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'simrevit_current_user_v1',
   USERS: 'simrevit_users_v1',
   PROPOSALS: 'simrevit_proposals_v1',
-  CATALOG: 'simrevit_catalog_v1'
+  CATALOG: 'simrevit_catalog_v1',
+  THEME: 'simrevit_theme_v1'
 };
 
 const DEMO_USER_IDS = ['usr_smk1', 'usr_smk2', 'usr_sma1', 'usr_paud1', 'usr_sd1', 'usr_smp1', 'usr_slb1', 'usr_pkbm1'];
@@ -245,11 +247,73 @@ export function resetToInitialData() {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
   localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify(INITIAL_PENGAJUAN));
   localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(STANDARD_CATALOG));
+  localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(DEFAULT_THEME));
   return {
     users: INITIAL_USERS,
     proposals: INITIAL_PENGAJUAN,
-    catalog: STANDARD_CATALOG
+    catalog: STANDARD_CATALOG,
+    theme: DEFAULT_THEME
   };
 }
 
 export const resetAllDataToDefault = resetToInitialData;
+
+// THEME STORAGE
+export function getStoredTheme(): AppThemeConfig {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.THEME);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(DEFAULT_THEME));
+      return DEFAULT_THEME;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.bgColor) {
+      localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(DEFAULT_THEME));
+      return DEFAULT_THEME;
+    }
+    return parsed;
+  } catch (e) {
+    console.error('Failed to get stored theme:', e);
+    return DEFAULT_THEME;
+  }
+}
+
+export function saveStoredTheme(theme: AppThemeConfig): AppThemeConfig {
+  try {
+    localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(theme));
+  } catch (e) {
+    console.error('Failed to save theme:', e);
+  }
+  return theme;
+}
+
+export function resetThemeToDefault(): AppThemeConfig {
+  localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(DEFAULT_THEME));
+  return DEFAULT_THEME;
+}
+
+// BULK USER STATUS HELPERS
+export function bulkSetUserStatus(userIds: string[], status: 'active' | 'inactive'): User[] {
+  const currentUsers = getStoredUsers();
+  const updated = currentUsers.map(u => {
+    if (userIds.includes(u.id)) {
+      return { ...u, status, updatedAt: new Date().toISOString() };
+    }
+    return u;
+  });
+  saveStoredUsers(updated);
+  return updated;
+}
+
+export function setAllSchoolsUserStatus(status: 'active' | 'inactive'): User[] {
+  const currentUsers = getStoredUsers();
+  const updated = currentUsers.map(u => {
+    // Keep admin always active
+    if (u.role !== 'admin') {
+      return { ...u, status, updatedAt: new Date().toISOString() };
+    }
+    return u;
+  });
+  saveStoredUsers(updated);
+  return updated;
+}

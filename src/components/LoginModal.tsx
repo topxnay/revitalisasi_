@@ -71,11 +71,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <KeyRound className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-heading font-bold text-white">
-                Masuk Sistem SIM-REVIT
+              <h2 className="text-lg sm:text-xl font-heading font-bold text-white leading-snug">
+                Masuk Sistem SIM- REVIT ASPIRASI
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Silakan masuk dengan akun Admin atau Satuan Pendidikan
+              <p className="text-xs text-indigo-300 font-medium mt-0.5">
+                (Pengajuan Rehab, Renov dan RKB -ASPIRASI)
               </p>
             </div>
           </div>

@@ -58,3 +58,114 @@
   background: rgba(255, 255, 255, 0.32);
 }
 
+/* LIGHT THEME STYLES - Ensures dark, high-contrast text and crisp card styling when background is light/white */
+body.theme-light {
+  color: #0f172a !important;
+}
+
+body.theme-light .text-white:not([class*="bg-indigo"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="bg-blue"]):not([class*="bg-sky"]):not([class*="bg-teal"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-amber"]):not([class*="bg-green"]):not([class*="bg-violet"]):not([class*="badge-"]):not(.keep-white) {
+  color: #0f172a !important;
+}
+
+body.theme-light .text-slate-100,
+body.theme-light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+body.theme-light .text-slate-300 {
+  color: #334155 !important;
+}
+
+body.theme-light .text-slate-400 {
+  color: #475569 !important;
+}
+
+body.theme-light .text-indigo-200,
+body.theme-light .text-indigo-300 {
+  color: #4338ca !important;
+}
+
+body.theme-light .text-sky-300,
+body.theme-light .text-sky-400 {
+  color: #0369a1 !important;
+}
+
+/* Glass cards and containers on light background */
+body.theme-light .bg-white\/5,
+body.theme-light .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 10px 25px -5px rgba(100, 116, 139, 0.12), 0 8px 10px -6px rgba(100, 116, 139, 0.08) !important;
+}
+
+body.theme-light .bg-slate-900\/60,
+body.theme-light .bg-slate-900\/80,
+body.theme-light .bg-slate-900\/90 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.12) !important;
+}
+
+body.theme-light .bg-slate-800\/60,
+body.theme-light .bg-slate-800\/80 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .border-white\/10,
+body.theme-light .border-white\/15,
+body.theme-light .border-white\/20,
+body.theme-light .border-white\/30 {
+  border-color: rgba(203, 213, 225, 0.85) !important;
+}
+
+body.theme-light .divide-white\/5,
+body.theme-light .divide-white\/10 {
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+/* Light mode table styling */
+body.theme-light table thead tr {
+  background-color: #f1f5f9 !important;
+  border-bottom-color: #cbd5e1 !important;
+}
+body.theme-light table thead th {
+  color: #1e293b !important;
+}
+body.theme-light table tbody tr {
+  border-bottom-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+body.theme-light table tbody tr:hover {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+}
+
+/* Inputs and interactive elements */
+body.theme-light input[type="text"],
+body.theme-light input[type="search"],
+body.theme-light input[type="number"],
+body.theme-light input[type="password"],
+body.theme-light input[type="email"],
+body.theme-light select,
+body.theme-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+body.theme-light input::placeholder,
+body.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Scrollbar for light mode */
+body.theme-light ::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.7);
+}
+body.theme-light ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+}
+body.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}
+

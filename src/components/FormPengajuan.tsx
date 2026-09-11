@@ -278,10 +278,10 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl sm:text-3xl font-bold font-heading text-white">
-            Usulan Revitalisasi Berhasil Tersimpan!
+            Usulan Berhasil Tersimpan!
           </h2>
           <p className="text-sm text-slate-300 max-w-md mx-auto">
-            Data pengajuan sarpras untuk <strong>{namaSekolah}</strong> ({jenjang}) telah masuk ke dalam sistem SIM-REVIT 2027.
+            Data usulan untuk <strong>{namaSekolah}</strong> ({jenjang}) telah masuk ke dalam sistem <strong>SIM- REVIT ASPIRASI</strong> (Pengajuan Rehab, Renov dan RKB -ASPIRASI).
           </p>
         </div>
 

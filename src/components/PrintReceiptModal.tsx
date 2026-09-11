@@ -198,7 +198,7 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
 
           {/* Footer note */}
           <div className="text-center text-[10px] text-slate-400 pt-4 border-t border-slate-200">
-            Dicetak otomatis dari Sistem Informasi Pengajuan Revitalisasi Sekolah (SIM-REVIT 2027) pada {new Date().toLocaleString('id-ID')}
+            Dicetak otomatis dari SIM- REVIT ASPIRASI (Pengajuan Rehab, Renov dan RKB -ASPIRASI) pada {new Date().toLocaleString('id-ID')}
           </div>
 
         </div>
