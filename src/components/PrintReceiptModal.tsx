@@ -143,15 +143,29 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {proposal.rincianBantuan?.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="border border-slate-300 py-1 px-2 text-center">{idx + 1}</td>
-                    <td className="border border-slate-300 py-1 px-2 font-medium">{item.name}</td>
-                    <td className="border border-slate-300 py-1 px-2 text-right font-mono-code">{formatRupiah(item.nominalSatuan)}</td>
-                    <td className="border border-slate-300 py-1 px-2 text-center font-bold">{item.quantity}</td>
-                    <td className="border border-slate-300 py-1 px-2 text-right font-mono-code font-bold text-slate-900">{formatRupiah(item.total)}</td>
-                  </tr>
-                ))}
+                {proposal.rincianBantuan?.map((item, idx) => {
+                  const isPercent = !!item.isPercentage || item.itemId === 'utilitas';
+                  return (
+                    <tr key={idx}>
+                      <td className="border border-slate-300 py-1 px-2 text-center">{idx + 1}</td>
+                      <td className="border border-slate-300 py-1 px-2 font-medium">
+                        <div>{item.name}</div>
+                        {isPercent && item.selectedChecklist && item.selectedChecklist.length > 0 && (
+                          <div className="text-[9px] text-slate-600 font-normal mt-0.5">
+                            Sub-Komponen: {item.selectedChecklist.join(', ')}
+                          </div>
+                        )}
+                      </td>
+                      <td className="border border-slate-300 py-1 px-2 text-right font-mono-code">
+                        {isPercent ? '15% Ajuan' : formatRupiah(item.nominalSatuan)}
+                      </td>
+                      <td className="border border-slate-300 py-1 px-2 text-center font-bold">
+                        {isPercent ? '1 Paket' : item.quantity}
+                      </td>
+                      <td className="border border-slate-300 py-1 px-2 text-right font-mono-code font-bold text-slate-900">{formatRupiah(item.total)}</td>
+                    </tr>
+                  );
+                })}
                 <tr className="bg-slate-100 font-bold">
                   <td colSpan={4} className="border border-slate-300 py-1.5 px-2 text-right uppercase">
                     Total Nilai Usulan Revitalisasi:

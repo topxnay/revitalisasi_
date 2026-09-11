@@ -51,6 +51,9 @@ export interface BantuanCatalogItem {
   unit: string;
   jenjangApplicable?: JenjangType[]; // if undefined, applies to all
   description: string;
+  isPercentage?: boolean; // e.g. true for 15% dari total semua ajuan
+  percentageRate?: number; // e.g. 15
+  checklistItems?: string[]; // e.g. ['Pagar', 'Taman', 'Lapangan', 'Paffing Blok', 'Jalan', 'Turab', 'Sanitasi', 'Pengeboran Sumur']
 }
 
 export interface BantuanItemSelection {
@@ -60,6 +63,10 @@ export interface BantuanItemSelection {
   quantity: number;
   total: number;
   customNote?: string;
+  isPercentage?: boolean;
+  percentageRate?: number;
+  checklistItems?: string[];
+  selectedChecklist?: string[]; // items checked by user
 }
 
 export interface PengajuanRevitalisasi {

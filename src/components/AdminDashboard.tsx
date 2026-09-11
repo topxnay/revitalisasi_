@@ -895,7 +895,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <tr key={cat.id} className="hover:bg-white/5 group transition-colors">
                       <td className="py-3.5 px-4 font-bold text-slate-400">{idx + 1}</td>
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-white text-xs">{cat.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-xs">{cat.name}</span>
+                          {cat.isPercentage && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                              {cat.percentageRate || 15}% Otomatis
+                            </span>
+                          )}
+                        </div>
+                        {cat.checklistItems && cat.checklistItems.length > 0 && (
+                          <div className="mt-2 p-2 rounded-xl bg-slate-900/60 border border-white/10 space-y-1">
+                            <div className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                              <span>Sub-Komponen Pilihan ({cat.checklistItems.length} Item Ceklis):</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {cat.checklistItems.map((item, cIdx) => (
+                                <span
+                                  key={cIdx}
+                                  className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 text-[10px] border border-emerald-500/20"
+                                >
+                                  {cIdx + 1}. {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         {cat.jenjangApplicable && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {cat.jenjangApplicable.map(j => (
@@ -907,7 +931,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         )}
                       </td>
                       <td className="py-3.5 px-4">
-                        {inlineEditNominalId === cat.id ? (
+                        {cat.isPercentage ? (
+                          <div className="space-y-1">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold font-mono-code text-xs">
+                              <span>{cat.percentageRate || 15}% dari Total Ajuan</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400">
+                              Dihitung proporsional 15% dari akumulasi semua ajuan
+                            </p>
+                          </div>
+                        ) : inlineEditNominalId === cat.id ? (
                           <div className="flex items-center gap-1.5">
                             <div className="relative">
                               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono-code font-bold text-emerald-400">Rp</span>

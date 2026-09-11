@@ -1,6 +1,6 @@
 import { PengajuanRevitalisasi, User, UserRole, JenjangType, BantuanCatalogItem, AppThemeConfig } from '../types';
 import { INITIAL_USERS, INITIAL_PENGAJUAN } from '../data/seedData';
-import { STANDARD_CATALOG } from '../data/defaultCatalog';
+import { STANDARD_CATALOG, DEFAULT_UTILITAS_CHECKLIST } from '../data/defaultCatalog';
 import { DEFAULT_THEME, THEME_PRESETS } from '../data/themePresets';
 
 const STORAGE_KEYS = {
@@ -194,6 +194,33 @@ export function getStoredCatalog(): BantuanCatalogItem[] {
       localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(STANDARD_CATALOG));
       return STANDARD_CATALOG;
     }
+
+    // Auto-update utilitas to ensure 8 checklist items & 15% rate are present
+    let needsUpdate = false;
+    const updated = parsed.map((item: BantuanCatalogItem) => {
+      if (item.id === 'utilitas') {
+        if (!item.checklistItems || item.checklistItems.length < 8 || !item.isPercentage || item.percentageRate !== 15) {
+          needsUpdate = true;
+          return {
+            ...item,
+            name: 'Utilitas',
+            category: 'sarana_utilitas' as const,
+            isPercentage: true,
+            percentageRate: 15,
+            unit: 'Paket Kawasan (15%)',
+            checklistItems: DEFAULT_UTILITAS_CHECKLIST,
+            description: 'Komponen Bantuan Utilitas (Pagar, Taman, Lapangan, Paffing Blok, Jalan, Turab, Sanitasi, Pengeboran Sumur) dengan nilai nominal 15% dari semua ajuan fisik.'
+          };
+        }
+      }
+      return item;
+    });
+
+    if (needsUpdate) {
+      localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(updated));
+      return updated;
+    }
+
     return parsed;
   } catch (e) {
     console.error('Failed to get stored catalog:', e);

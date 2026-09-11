@@ -18,7 +18,11 @@ import {
   Sparkles,
   FileCheck,
   AlertCircle,
-  Layers
+  Layers,
+  Check,
+  CheckSquare,
+  Percent,
+  RotateCcw
 } from 'lucide-react';
 import { 
   PengajuanRevitalisasi, 
@@ -32,7 +36,8 @@ import {
   JENJANG_LIST, 
   STATUS_LAHAN_OPTIONS, 
   STANDARD_CATALOG, 
-  JENJANG_COLORS 
+  JENJANG_COLORS,
+  DEFAULT_UTILITAS_CHECKLIST
 } from '../data/defaultCatalog';
 import { formatRupiah } from '../utils/excelExport';
 import { generateRegistrationNumber, getStoredCatalog } from '../utils/storage';
@@ -114,18 +119,72 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
     editingProposal?.linkProposalPdf || ''
   );
 
+  // Helper to recalculate percentage items (Utilitas 15% dari semua usulan fisik lainnya)
+  const recalculateItemsWithPercentages = (items: BantuanItemSelection[]): BantuanItemSelection[] => {
+    // Total of all non-percentage physical proposal items
+    const basePhysicalTotal = items
+      .filter(i => !i.isPercentage && i.itemId !== 'utilitas')
+      .reduce((sum, i) => sum + (i.quantity * i.nominalSatuan), 0);
+
+    return items.map(item => {
+      const isPercent = !!item.isPercentage || item.itemId === 'utilitas';
+      if (isPercent) {
+        const rate = item.percentageRate || 15;
+        const allChecklist = item.checklistItems && item.checklistItems.length > 0 
+          ? item.checklistItems 
+          : DEFAULT_UTILITAS_CHECKLIST;
+        const selected = item.selectedChecklist !== undefined 
+          ? item.selectedChecklist 
+          : allChecklist;
+
+        // If at least one checklist item is checked, calculate 15% of all other proposals
+        const hasSelection = selected.length > 0;
+        const calculatedNominal = hasSelection ? Math.round(basePhysicalTotal * (rate / 100)) : 0;
+        const qty = item.quantity > 0 ? item.quantity : 1;
+
+        return {
+          ...item,
+          name: 'Utilitas',
+          isPercentage: true,
+          percentageRate: rate,
+          checklistItems: allChecklist,
+          selectedChecklist: selected,
+          nominalSatuan: calculatedNominal,
+          quantity: qty,
+          total: calculatedNominal * qty
+        };
+      } else {
+        return {
+          ...item,
+          total: item.quantity * item.nominalSatuan
+        };
+      }
+    });
+  };
+
   // Bantuan Items Selection (Page 2 Interactive Builder)
   const [bantuanItems, setBantuanItems] = useState<BantuanItemSelection[]>(() => {
     if (editingProposal?.rincianBantuan && editingProposal.rincianBantuan.length > 0) {
-      return editingProposal.rincianBantuan;
+      return recalculateItemsWithPercentages(editingProposal.rincianBantuan);
     }
     // Default initial items
-    return [
+    const defaultRaw: BantuanItemSelection[] = [
       { itemId: 'rkb', name: 'RKB (Ruang Kelas Baru)', nominalSatuan: 400000000, quantity: 4, total: 1600000000 },
       { itemId: 'perpustakaan', name: 'Perpustakaan', nominalSatuan: 432000000, quantity: 1, total: 432000000 },
       { itemId: 'toilet', name: 'Toilet / MCK & Sanitasi', nominalSatuan: 120000000, quantity: 2, total: 240000000 },
-      { itemId: 'utilitas', name: 'Utilitas (Pagar, Paving Blok, Listrik & Drainase)', nominalSatuan: 150000000, quantity: 1, total: 150000000 }
+      { 
+        itemId: 'utilitas', 
+        name: 'Utilitas', 
+        nominalSatuan: 0, 
+        quantity: 1, 
+        total: 0,
+        isPercentage: true,
+        percentageRate: 15,
+        checklistItems: DEFAULT_UTILITAS_CHECKLIST,
+        selectedChecklist: DEFAULT_UTILITAS_CHECKLIST
+      }
     ];
+    return recalculateItemsWithPercentages(defaultRaw);
   });
 
   const [customItemName, setCustomItemName] = useState('');
@@ -137,21 +196,30 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
   // Auto-generate text summary
   const autoSummaryText = bantuanItems
     .filter(item => item.quantity > 0)
-    .map(item => `${item.quantity} ${item.name}`)
+    .map(item => {
+      if (item.itemId === 'utilitas' || item.isPercentage) {
+        const count = item.selectedChecklist?.length ?? 8;
+        return `Utilitas (${count} Item Ceklis: ${item.selectedChecklist?.join(', ') || 'Semua Kawasan'} - 15%)`;
+      }
+      return `${item.quantity} ${item.name}`;
+    })
     .join(', ');
 
   const handleNominalChange = (itemId: string, newNominal: number) => {
     if (newNominal < 0) return;
-    setBantuanItems(prev => prev.map(item => {
-      if (item.itemId === itemId) {
-        return {
-          ...item,
-          nominalSatuan: newNominal,
-          total: item.quantity * newNominal
-        };
-      }
-      return item;
-    }));
+    setBantuanItems(prev => {
+      const updated = prev.map(item => {
+        if (item.itemId === itemId) {
+          return {
+            ...item,
+            nominalSatuan: newNominal,
+            total: item.quantity * newNominal
+          };
+        }
+        return item;
+      });
+      return recalculateItemsWithPercentages(updated);
+    });
   };
 
   const handleItemNameChange = (itemId: string, newName: string) => {
@@ -170,9 +238,9 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
     if (newQty < 0) return;
     setBantuanItems(prev => {
       if (newQty === 0) {
-        return prev.filter(i => i.itemId !== itemId);
+        return recalculateItemsWithPercentages(prev.filter(i => i.itemId !== itemId));
       }
-      return prev.map(item => {
+      const updated = prev.map(item => {
         if (item.itemId === itemId) {
           return {
             ...item,
@@ -182,26 +250,77 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
         }
         return item;
       });
+      return recalculateItemsWithPercentages(updated);
+    });
+  };
+
+  const handleToggleUtilitasChecklist = (itemId: string, checkItem: string) => {
+    setBantuanItems(prev => {
+      const updated = prev.map(item => {
+        if (item.itemId === itemId) {
+          const current = item.selectedChecklist || [];
+          let updatedChecklist: string[];
+          if (current.includes(checkItem)) {
+            updatedChecklist = current.filter(c => c !== checkItem);
+          } else {
+            updatedChecklist = [...current, checkItem];
+          }
+          return {
+            ...item,
+            selectedChecklist: updatedChecklist
+          };
+        }
+        return item;
+      });
+      return recalculateItemsWithPercentages(updated);
+    });
+  };
+
+  const handleSelectAllUtilitasChecklist = (itemId: string, selectAll: boolean) => {
+    setBantuanItems(prev => {
+      const updated = prev.map(item => {
+        if (item.itemId === itemId) {
+          const allList = item.checklistItems || DEFAULT_UTILITAS_CHECKLIST;
+          return {
+            ...item,
+            selectedChecklist: selectAll ? [...allList] : []
+          };
+        }
+        return item;
+      });
+      return recalculateItemsWithPercentages(updated);
     });
   };
 
   const handleAddCatalogItem = (catalogItem: BantuanCatalogItem) => {
     setBantuanItems(prev => {
       const existing = prev.find(i => i.itemId === catalogItem.id);
+      const isPercent = !!catalogItem.isPercentage || catalogItem.id === 'utilitas';
+      let updated: BantuanItemSelection[];
+
       if (existing) {
-        return prev.map(i => i.itemId === catalogItem.id ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.nominalSatuan } : i);
+        if (isPercent) {
+          // If already in list, ensure active quantity
+          updated = prev.map(i => i.itemId === catalogItem.id ? { ...i, quantity: 1 } : i);
+        } else {
+          updated = prev.map(i => i.itemId === catalogItem.id ? { ...i, quantity: i.quantity + 1 } : i);
+        }
       } else {
-        return [
-          ...prev,
-          {
-            itemId: catalogItem.id,
-            name: catalogItem.name,
-            nominalSatuan: catalogItem.nominalSatuan,
-            quantity: 1,
-            total: catalogItem.nominalSatuan
-          }
-        ];
+        const itemChecklist = catalogItem.checklistItems || (catalogItem.id === 'utilitas' ? DEFAULT_UTILITAS_CHECKLIST : undefined);
+        const newItem: BantuanItemSelection = {
+          itemId: catalogItem.id,
+          name: catalogItem.name,
+          nominalSatuan: catalogItem.nominalSatuan,
+          quantity: 1,
+          total: catalogItem.nominalSatuan,
+          isPercentage: isPercent,
+          percentageRate: catalogItem.percentageRate || (isPercent ? 15 : undefined),
+          checklistItems: itemChecklist,
+          selectedChecklist: itemChecklist ? [...itemChecklist] : undefined
+        };
+        updated = [...prev, newItem];
       }
+      return recalculateItemsWithPercentages(updated);
     });
   };
 
@@ -217,7 +336,7 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
       total: Number(customItemPrice)
     };
 
-    setBantuanItems([...bantuanItems, newItem]);
+    setBantuanItems(prev => recalculateItemsWithPercentages([...prev, newItem]));
     setCustomItemName('');
     setCustomItemPrice(100000000);
   };
@@ -656,6 +775,7 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {activeCatalog.filter(c => !c.jenjangApplicable || c.jenjangApplicable.includes(jenjang)).map(cat => {
                   const currentSelection = bantuanItems.find(i => i.itemId === cat.id);
+                  const isPercent = !!cat.isPercentage || cat.id === 'utilitas';
                   return (
                     <button
                       key={cat.id}
@@ -669,15 +789,23 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                     >
                       <div>
                         <div className="text-xs font-bold text-white line-clamp-1">{cat.name}</div>
-                        <div className="text-[11px] text-emerald-400 font-mono-code font-bold mt-0.5">
-                          {formatRupiah(cat.nominalSatuan)}
-                        </div>
+                        {isPercent ? (
+                          <div className="text-[11px] text-amber-300 font-mono-code font-bold mt-0.5 flex items-center gap-1">
+                            <span>15% dari Semua Ajuan</span>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-emerald-400 font-mono-code font-bold mt-0.5">
+                            {formatRupiah(cat.nominalSatuan)}
+                          </div>
+                        )}
                       </div>
                       <div className="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
-                        <span className="text-indigo-300 font-medium">+ Tambah</span>
+                        <span className="text-indigo-300 font-medium">
+                          {isPercent ? '+ Pilih Utilitas' : '+ Tambah'}
+                        </span>
                         {currentSelection && currentSelection.quantity > 0 && (
                           <span className="px-2 py-0.5 bg-indigo-600 text-white rounded-full font-bold text-[10px]">
-                            {currentSelection.quantity} {cat.unit}
+                            {isPercent ? '1 Paket (15%)' : `${currentSelection.quantity} ${cat.unit}`}
                           </span>
                         )}
                       </div>
@@ -686,6 +814,98 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                 })}
               </div>
             </div>
+
+            {/* KOMPONEN BANTUAN UTILITAS (PAGE 2: 8 ITEM CEKLIS & 15% DARI SEMUA AJUAN) */}
+            {(() => {
+              const utilitasSelection = bantuanItems.find(i => i.itemId === 'utilitas' || i.isPercentage);
+              if (!utilitasSelection) return null;
+              const checklist = utilitasSelection.checklistItems && utilitasSelection.checklistItems.length > 0 
+                ? utilitasSelection.checklistItems 
+                : DEFAULT_UTILITAS_CHECKLIST;
+              const selected = utilitasSelection.selectedChecklist || [];
+
+              return (
+                <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/10 via-slate-900/90 to-emerald-500/10 border border-amber-500/30 backdrop-blur-xl space-y-4 shadow-xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center shrink-0">
+                        <CheckSquare className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-white text-sm flex items-center gap-2 flex-wrap">
+                          <span>Komponen Bantuan Utilitas</span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono-code text-[11px] font-bold border border-amber-500/30">
+                            Pagu 15% dari Semua Ajuan Fisik
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300">
+                          Centang sub-komponen utilitas kawasan yang dibutuhkan sekolah. Nilai otomatis dihitung 15% dari akumulasi semua ajuan.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectAllUtilitasChecklist(utilitasSelection.itemId, true)}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-all active:scale-[0.98]"
+                      >
+                        Ceklis Semua (8 Item)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectAllUtilitasChecklist(utilitasSelection.itemId, false)}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 transition-all active:scale-[0.98]"
+                      >
+                        Kosongkan
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 8 Checkbox Sub-items */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {checklist.map((itemLabel, cIdx) => {
+                      const isChecked = selected.includes(itemLabel);
+                      return (
+                        <button
+                          key={itemLabel}
+                          type="button"
+                          onClick={() => handleToggleUtilitasChecklist(utilitasSelection.itemId, itemLabel)}
+                          className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between gap-2 text-xs select-none active:scale-[0.98] ${
+                            isChecked
+                              ? 'bg-emerald-600/30 border-emerald-400 text-white font-bold shadow-sm ring-1 ring-emerald-500/30'
+                              : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="font-mono-code text-[11px] text-slate-400 shrink-0">{cIdx + 1}.</span>
+                            <span className="truncate">{itemLabel}</span>
+                          </div>
+                          <div className={`w-4 h-4 rounded-md flex items-center justify-center text-xs shrink-0 transition-all ${
+                            isChecked ? 'bg-emerald-500 text-white' : 'border border-slate-500 bg-slate-800'
+                          }`}>
+                            {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Utilitas Calculation Summary */}
+                  <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-slate-300">
+                      <span className="font-bold text-amber-300">
+                        Item Terpilih: {selected.length} dari {checklist.length} Sub-Komponen Utilitas
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 font-mono-code font-bold">
+                      <span className="text-slate-400 text-xs">Nominal Utilitas (15%):</span>
+                      <span className="text-emerald-400 text-base font-extrabold">{formatRupiah(utilitasSelection.total)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Active Items Table (Page 2 format: Menu | Nominal | Jumlah | Total) */}
             <div className="space-y-2">
@@ -708,7 +928,7 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                   <thead>
                     <tr className="bg-white/10 text-slate-200 font-semibold border-b border-white/10">
                       <th className="py-3.5 px-3 w-10">No</th>
-                      <th className="py-3.5 px-3 min-w-[180px]">Menu / Komponen Bantuan</th>
+                      <th className="py-3.5 px-3 min-w-[200px]">Menu / Komponen Bantuan</th>
                       <th className="py-3.5 px-3 min-w-[170px]">Nominal Satuan (Rp)</th>
                       <th className="py-3.5 px-3 text-center min-w-[120px]">Jumlah (Unit)</th>
                       <th className="py-3.5 px-3 text-right min-w-[140px]">Total Biaya (Rp)</th>
@@ -723,71 +943,110 @@ export const FormPengajuan: React.FC<FormPengajuanProps> = ({
                         </td>
                       </tr>
                     ) : (
-                      bantuanItems.map((item, idx) => (
-                        <tr key={item.itemId} className="hover:bg-white/5 transition-colors">
-                          <td className="py-3 px-3 font-bold text-slate-400">{idx + 1}</td>
-                          <td className="py-3 px-3">
-                            <div className="font-bold text-white text-xs">{item.name}</div>
-                          </td>
-                          <td className="py-3 px-3">
-                            <div className="relative flex items-center">
-                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-mono-code font-bold text-emerald-400">
-                                Rp
-                              </span>
-                              <input
-                                type="number"
-                                min={0}
-                                step={1000000}
-                                value={item.nominalSatuan}
-                                onChange={(e) => handleNominalChange(item.itemId, Math.max(0, Number(e.target.value) || 0))}
-                                title="Input nominal satuan manual"
-                                className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-slate-800/80 border border-white/20 text-emerald-400 font-mono-code font-bold text-xs focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-                              />
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-mono-code block mt-0.5">
-                              {formatRupiah(item.nominalSatuan)}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            <div className="inline-flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/15">
+                      bantuanItems.map((item, idx) => {
+                        const isPercent = !!item.isPercentage || item.itemId === 'utilitas';
+                        return (
+                          <tr key={item.itemId} className="hover:bg-white/5 transition-colors">
+                            <td className="py-3 px-3 font-bold text-slate-400">{idx + 1}</td>
+                            <td className="py-3 px-3">
+                              <div className="font-bold text-white text-xs">{item.name}</div>
+                              {isPercent && (
+                                <div className="mt-1 space-y-1">
+                                  <div className="flex flex-wrap gap-1">
+                                    {(item.selectedChecklist && item.selectedChecklist.length > 0 
+                                      ? item.selectedChecklist 
+                                      : (item.checklistItems || DEFAULT_UTILITAS_CHECKLIST)
+                                    ).map((chk, i) => (
+                                      <span
+                                        key={i}
+                                        className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-medium border border-emerald-500/30"
+                                      >
+                                        {chk}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3">
+                              {isPercent ? (
+                                <div className="space-y-0.5">
+                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold font-mono-code text-xs">
+                                    <span>15% dari Semua Ajuan</span>
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 font-mono-code block">
+                                    Nilai: {formatRupiah(item.nominalSatuan)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="relative flex items-center">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-mono-code font-bold text-emerald-400">
+                                      Rp
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step={1000000}
+                                      value={item.nominalSatuan}
+                                      onChange={(e) => handleNominalChange(item.itemId, Math.max(0, Number(e.target.value) || 0))}
+                                      title="Input nominal satuan manual"
+                                      className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-slate-800/80 border border-white/20 text-emerald-400 font-mono-code font-bold text-xs focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 font-mono-code block mt-0.5">
+                                    {formatRupiah(item.nominalSatuan)}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              {isPercent ? (
+                                <span className="px-2.5 py-1 rounded-xl bg-white/10 text-white font-bold text-xs font-mono-code">
+                                  1 Paket (15%)
+                                </span>
+                              ) : (
+                                <div className="inline-flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/15">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuantityChange(item.itemId, item.quantity - 1)}
+                                    className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition-colors"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={item.quantity}
+                                    onChange={(e) => handleQuantityChange(item.itemId, Math.max(1, parseInt(e.target.value) || 1))}
+                                    className="w-10 text-center font-bold font-mono-code text-xs text-white bg-transparent border-0 focus:ring-0 p-0"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuantityChange(item.itemId, item.quantity + 1)}
+                                    className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono-code font-bold text-emerald-400 text-xs">
+                              {formatRupiah(item.total)}
+                            </td>
+                            <td className="py-3 px-3 text-center">
                               <button
                                 type="button"
-                                onClick={() => handleQuantityChange(item.itemId, item.quantity - 1)}
-                                className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition-colors"
+                                onClick={() => handleQuantityChange(item.itemId, 0)}
+                                title="Hapus komponen usulan ini"
+                                className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
                               >
-                                <Minus className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                              <input
-                                type="number"
-                                min={1}
-                                value={item.quantity}
-                                onChange={(e) => handleQuantityChange(item.itemId, Math.max(1, parseInt(e.target.value) || 1))}
-                                className="w-10 text-center font-bold font-mono-code text-xs text-white bg-transparent border-0 focus:ring-0 p-0"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleQuantityChange(item.itemId, item.quantity + 1)}
-                                className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition-colors"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 text-right font-mono-code font-bold text-emerald-400 text-xs">
-                            {formatRupiah(item.total)}
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleQuantityChange(item.itemId, 0)}
-                              title="Hapus komponen usulan ini"
-                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                     <tr className="bg-white/10 font-bold border-t border-white/15">
                       <td colSpan={4} className="py-3.5 px-3 text-slate-200 uppercase text-xs">

@@ -238,10 +238,15 @@ export function exportSingleProposalRAB(proposal: PengajuanRevitalisasi) {
   rows.push(['Menu', 'Nominal', 'Jumlah', 'Total']);
 
   proposal.rincianBantuan.forEach(item => {
+    const isPercent = !!item.isPercentage || item.itemId === 'utilitas';
+    const displayName = isPercent && item.selectedChecklist && item.selectedChecklist.length > 0
+      ? `${item.name} (${item.selectedChecklist.join(', ')}) - 15% Ajuan`
+      : item.name;
+
     rows.push([
-      item.name,
-      formatRupiah(item.nominalSatuan),
-      item.quantity,
+      displayName,
+      isPercent ? `15% (${formatRupiah(item.nominalSatuan)})` : formatRupiah(item.nominalSatuan),
+      isPercent ? '1 Paket' : item.quantity,
       formatRupiah(item.total)
     ]);
   });

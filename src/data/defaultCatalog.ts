@@ -10,6 +10,17 @@ export const JENJANG_LIST: JenjangType[] = [
   'PKBM'
 ];
 
+export const DEFAULT_UTILITAS_CHECKLIST: string[] = [
+  'Pagar',
+  'Taman',
+  'Lapangan',
+  'Paffing Blok',
+  'Jalan',
+  'Turab',
+  'Sanitasi',
+  'Pengeboran Sumur'
+];
+
 export const STATUS_LAHAN_OPTIONS: StatusLahanType[] = [
   'Wakaf/AIW Yayasan',
   'Sertifikat Hak Milik Yayasan',
@@ -88,11 +99,14 @@ export const STANDARD_CATALOG: BantuanCatalogItem[] = [
   },
   {
     id: 'utilitas',
-    name: 'Utilitas (Pagar, Paving Blok, Listrik & Drainase)',
+    name: 'Utilitas',
     category: 'sarana_utilitas',
-    nominalSatuan: 150000000,
-    unit: 'Paket Kawasan',
-    description: 'Pagar keliling keamanan sekolah, paving blok lapangan/halaman upacara, instalasi listrik & drainase.'
+    nominalSatuan: 0,
+    unit: 'Paket Kawasan (15%)',
+    isPercentage: true,
+    percentageRate: 15,
+    checklistItems: DEFAULT_UTILITAS_CHECKLIST,
+    description: 'Komponen Bantuan Utilitas (Pagar, Taman, Lapangan, Paffing Blok, Jalan, Turab, Sanitasi, Pengeboran Sumur) dengan nilai nominal 15% dari semua ajuan fisik.'
   },
   {
     id: 'lab_komputer',

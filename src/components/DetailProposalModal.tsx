@@ -278,14 +278,49 @@ export const DetailProposalModal: React.FC<DetailProposalModalProps> = ({
                 </thead>
                 <tbody className="divide-y divide-white/5 text-slate-200">
                   {proposal.rincianBantuan && proposal.rincianBantuan.length > 0 ? (
-                    proposal.rincianBantuan.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-white/5">
-                        <td className="py-3 px-3 font-semibold text-white">{item.name}</td>
-                        <td className="py-3 px-3 font-mono-code text-slate-300">{formatRupiah(item.nominalSatuan)}</td>
-                        <td className="py-3 px-3 text-center font-bold text-white">{item.quantity}</td>
-                        <td className="py-3 px-3 text-right font-mono-code font-bold text-emerald-400">{formatRupiah(item.total)}</td>
-                      </tr>
-                    ))
+                    proposal.rincianBantuan.map((item, idx) => {
+                      const isPercent = !!item.isPercentage || item.itemId === 'utilitas';
+                      return (
+                        <tr key={idx} className="hover:bg-white/5">
+                          <td className="py-3 px-3">
+                            <div className="font-semibold text-white">{item.name}</div>
+                            {isPercent && (
+                              <div className="mt-1 space-y-1">
+                                <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30 mr-1">
+                                  15% Pagu Otomatis
+                                </span>
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                  {(item.selectedChecklist || []).map((chk, cIdx) => (
+                                    <span
+                                      key={cIdx}
+                                      className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-medium border border-emerald-500/30"
+                                    >
+                                      {chk}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 font-mono-code text-slate-300">
+                            {isPercent ? (
+                              <div>
+                                <span className="text-amber-300 text-xs font-bold">15% Ajuan</span>
+                                <span className="block text-[10px] text-slate-400">({formatRupiah(item.nominalSatuan)})</span>
+                              </div>
+                            ) : (
+                              formatRupiah(item.nominalSatuan)
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-center font-bold text-white">
+                            {isPercent ? '1 Paket (15%)' : item.quantity}
+                          </td>
+                          <td className="py-3 px-3 text-right font-mono-code font-bold text-emerald-400">
+                            {formatRupiah(item.total)}
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={4} className="py-4 px-3 text-center text-slate-400">
