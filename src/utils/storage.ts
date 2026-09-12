@@ -25,16 +25,14 @@ export function getStoredUsers(): User[] {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
       return INITIAL_USERS;
     }
-    // Clean up demo users and update admin password to akhmadtaufik84@
+    // Clean up demo users and preserve custom user/admin credentials
     let needsUpdate = false;
     parsed = parsed
       .filter((u: User) => !DEMO_USER_IDS.includes(u.id))
       .map((u: User) => {
-        if (u.role === 'admin' || u.username === 'admin') {
-          if (u.password !== 'akhmadtaufik84@') {
-            needsUpdate = true;
-            return { ...u, password: 'akhmadtaufik84@', email: 'akhmadtaufik1984@gmail.com' };
-          }
+        if (u.id === 'usr_admin' && u.username === 'admin' && !u.password) {
+          needsUpdate = true;
+          return { ...u, password: 'akhmadtaufik84@', email: u.email || 'akhmadtaufik1984@gmail.com' };
         }
         return u;
       });
@@ -157,9 +155,6 @@ export function getCurrentUser(): User | null {
     if (DEMO_USER_IDS.includes(user.id)) {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       return null;
-    }
-    if (user.role === 'admin' || user.username === 'admin') {
-      return { ...user, password: 'akhmadtaufik84@', email: 'akhmadtaufik1984@gmail.com' };
     }
     return user;
   } catch (e) {

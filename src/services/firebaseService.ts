@@ -105,15 +105,18 @@ export function subscribeUsers(
       users.push(docSnap.data() as User);
     });
 
-    // Ensure admin user is present and up to date
+    // Ensure at least one admin exists without overwriting custom admin passwords
     let hasAdmin = false;
     const sanitizedUsers = users.map(u => {
-      if (u.role === 'admin' || u.username === 'admin') {
+      if (u.role === 'admin') {
         hasAdmin = true;
+      }
+      // Only set initial fallback credentials for default primary admin if missing
+      if (u.id === 'usr_admin' && u.username === 'admin' && !u.password) {
         return {
           ...u,
           password: 'akhmadtaufik84@',
-          email: 'akhmadtaufik1984@gmail.com'
+          email: u.email || 'akhmadtaufik1984@gmail.com'
         };
       }
       return u;
