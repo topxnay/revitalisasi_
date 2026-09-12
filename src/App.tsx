@@ -57,6 +57,21 @@ import {
   bulkSetUserStatus,
   setAllSchoolsUserStatus
 } from './utils/storage';
+import { 
+  subscribeProposals,
+  saveProposalToCloud,
+  deleteProposalFromCloud,
+  subscribeUsers,
+  saveUserToCloud,
+  deleteUserFromCloud,
+  bulkUpdateUsersInCloud,
+  subscribeCatalog,
+  saveCatalogItemToCloud,
+  deleteCatalogItemFromCloud,
+  subscribeTheme,
+  saveThemeToCloud,
+  resetAllDataInCloud
+} from './services/firebaseService';
 import { DEFAULT_THEME, isColorLight } from './data/themePresets';
 
 export function App() {
@@ -66,8 +81,54 @@ export function App() {
   const [proposals, setProposals] = useState<PengajuanRevitalisasi[]>(() => getStoredProposals());
   const [catalog, setCatalog] = useState<BantuanCatalogItem[]>(() => getStoredCatalog());
   const [theme, setTheme] = useState<AppThemeConfig>(() => getStoredTheme());
+  const [isCloudConnected, setIsCloudConnected] = useState(false);
   
   const isLight = theme.isLightMode ?? isColorLight(theme.bgColor);
+
+  // Real-time Cloud Synchronization via Firebase Firestore
+  useEffect(() => {
+    // 1. Subscribe to proposals
+    const unsubProposals = subscribeProposals((cloudProposals) => {
+      setProposals(cloudProposals);
+      setIsCloudConnected(true);
+    }, (err) => {
+      console.warn('Proposals cloud sync warning:', err);
+    });
+
+    // 2. Subscribe to users
+    const unsubUsers = subscribeUsers((cloudUsers) => {
+      setUsers(cloudUsers);
+      setIsCloudConnected(true);
+      // Keep active currentUser updated if changed in cloud
+      const currentId = getStoredCurrentUser()?.id;
+      if (currentId) {
+        const found = cloudUsers.find(u => u.id === currentId);
+        if (found) {
+          setCurrentUser(found);
+          setStoredCurrentUser(found);
+        }
+      }
+    }, (err) => {
+      console.warn('Users cloud sync warning:', err);
+    });
+
+    // 3. Subscribe to catalog
+    const unsubCatalog = subscribeCatalog((cloudCatalog) => {
+      setCatalog(cloudCatalog);
+    });
+
+    // 4. Subscribe to theme
+    const unsubTheme = subscribeTheme((cloudTheme) => {
+      setTheme(cloudTheme);
+    });
+
+    return () => {
+      unsubProposals();
+      unsubUsers();
+      unsubCatalog();
+      unsubTheme();
+    };
+  }, []);
 
   // Sync document body background color with selected theme & toggle theme-light class
   useEffect(() => {
@@ -147,32 +208,40 @@ export function App() {
     }
   };
 
-  const handleResetData = () => {
-    const { users: newUsers, proposals: newProposals } = resetToInitialData();
-    const defaultCat = resetCatalogToDefault();
-    setUsers(newUsers);
-    setProposals(newProposals);
-    setCatalog(defaultCat);
-    const updatedUser = newUsers.find(u => u.id === currentUser?.id) || null;
-    setCurrentUser(updatedUser);
-    setStoredCurrentUser(updatedUser);
-    alert('Data sistem dan katalog biaya satuan berhasil direset ke standar awal Kemendikbud!');
+  const handleResetData = async () => {
+    if (window.confirm('Reset seluruh data ke standar awal Kemendikbud? Semua usulan dan akun di perangkat lain juga akan direset.')) {
+      const { users: newUsers, proposals: newProposals } = resetToInitialData();
+      const defaultCat = resetCatalogToDefault();
+      setUsers(newUsers);
+      setProposals(newProposals);
+      setCatalog(defaultCat);
+      const updatedUser = newUsers.find(u => u.id === currentUser?.id) || null;
+      setCurrentUser(updatedUser);
+      setStoredCurrentUser(updatedUser);
+      await resetAllDataInCloud().catch(console.error);
+      alert('Data sistem berhasil direset ke standar awal Kemendikbud dan disinkronkan ke Cloud Firebase!');
+    }
   };
 
   // Catalog Handlers
   const handleSaveCatalogItem = (item: BantuanCatalogItem) => {
     const updated = saveCatalogItemToStorage(item);
     setCatalog(updated);
+    saveCatalogItemToCloud(item).catch(console.error);
   };
 
   const handleDeleteCatalogItem = (itemId: string) => {
     const updated = deleteCatalogItemFromStorage(itemId);
     setCatalog(updated);
+    deleteCatalogItemFromCloud(itemId).catch(console.error);
   };
 
   const handleResetCatalog = () => {
     const updated = resetCatalogToDefault();
     setCatalog(updated);
+    for (const cat of updated) {
+      saveCatalogItemToCloud(cat).catch(console.error);
+    }
   };
 
   // Proposal Operations
@@ -185,12 +254,19 @@ export function App() {
     } else {
       setActiveView('user');
     }
+    // Sync to Cloud Firebase
+    saveProposalToCloud(savedProposal).catch((err) => {
+      console.error('Failed to save proposal to Firebase:', err);
+    });
   };
 
   const handleDeleteProposal = (proposalId: string) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus data usulan ini?')) {
       const updatedList = deleteProposalFromStorage(proposalId);
       setProposals(updatedList);
+      deleteProposalFromCloud(proposalId).catch((err) => {
+        console.error('Failed to delete proposal from Firebase:', err);
+      });
     }
   };
 
@@ -200,6 +276,9 @@ export function App() {
     if (detailProposal?.id === updatedProposal.id) {
       setDetailProposal(updatedProposal);
     }
+    saveProposalToCloud(updatedProposal).catch((err) => {
+      console.error('Failed to update verification in Firebase:', err);
+    });
   };
 
   // User Operations
@@ -210,21 +289,30 @@ export function App() {
       setCurrentUser(savedUser);
       setStoredCurrentUser(savedUser);
     }
+    saveUserToCloud(savedUser).catch((err) => {
+      console.error('Failed to save user to Firebase:', err);
+    });
   };
 
   const handleDeleteUser = (userId: string) => {
     if (window.confirm('Hapus akun pengguna ini dari sistem?')) {
       const updatedUsers = deleteUserFromStorage(userId);
       setUsers(updatedUsers);
+      deleteUserFromCloud(userId).catch((err) => {
+        console.error('Failed to delete user from Firebase:', err);
+      });
     }
   };
 
   const handleToggleUser = (userId: string) => {
     const updatedUsers = toggleUserStatus(userId);
     setUsers(updatedUsers);
+    const targetUser = updatedUsers.find(u => u.id === userId);
     if (currentUser?.id === userId) {
-      const updatedCurrent = updatedUsers.find(u => u.id === userId) || null;
-      setCurrentUser(updatedCurrent);
+      setCurrentUser(targetUser || null);
+    }
+    if (targetUser) {
+      saveUserToCloud(targetUser).catch(console.error);
     }
   };
 
@@ -235,6 +323,8 @@ export function App() {
       const me = updated.find(u => u.id === currentUser.id);
       if (me) setCurrentUser(me);
     }
+    const modified = updated.filter(u => userIds.includes(u.id));
+    bulkUpdateUsersInCloud(modified).catch(console.error);
   };
 
   const handleSetAllSchoolsStatus = (status: 'active' | 'inactive') => {
@@ -244,17 +334,20 @@ export function App() {
       const me = updated.find(u => u.id === currentUser.id);
       if (me) setCurrentUser(me);
     }
+    bulkUpdateUsersInCloud(updated).catch(console.error);
   };
 
   // Theme Handlers
   const handleSaveTheme = (newTheme: AppThemeConfig) => {
     const saved = saveStoredTheme(newTheme);
     setTheme(saved);
+    saveThemeToCloud(newTheme).catch(console.error);
   };
 
   const handleResetTheme = () => {
     const def = resetThemeToDefault();
     setTheme(def);
+    saveThemeToCloud(def).catch(console.error);
   };
 
   // Navigation Trigger Helpers
@@ -317,6 +410,7 @@ export function App() {
       <Navbar
         currentUser={currentUser}
         isLightMode={isLight}
+        isCloudConnected={isCloudConnected}
         onOpenLogin={(role) => {
           setInitialRoleLogin(role);
           setIsLoginModalOpen(true);

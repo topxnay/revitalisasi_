@@ -9,7 +9,8 @@ import {
   FileSpreadsheet, 
   CheckCircle2, 
   Layers,
-  Users
+  Users,
+  Cloud
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -23,6 +24,7 @@ interface NavbarProps {
   onNavigate: (view: 'landing' | 'admin' | 'user' | 'form') => void;
   onOpenUserManagement?: () => void;
   isLightMode?: boolean;
+  isCloudConnected?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,7 +36,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeView,
   onNavigate,
   onOpenUserManagement,
-  isLightMode = false
+  isLightMode = false,
+  isCloudConnected = true
 }) => {
   return (
     <header className={`sticky top-0 z-40 backdrop-blur-2xl transition-colors duration-300 ${
@@ -139,6 +142,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Status / Action Buttons */}
           <div className="flex items-center gap-3">
+            {/* Cloud Sync Status Indicator */}
+            <div 
+              title={isCloudConnected ? "Data tersinkronisasi online ke Cloud Firebase (Multi-device)" : "Menghubungkan ke Cloud Firebase..."}
+              className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all select-none border ${
+                isCloudConnected 
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' 
+                  : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+              }`}
+            >
+              <Cloud className="w-3.5 h-3.5 shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="hidden xl:inline">{isCloudConnected ? 'Cloud Firebase Aktif' : 'Menghubungkan...'}</span>
+            </div>
+
             {currentUser ? (
               <div className="flex items-center gap-2 sm:gap-3">
                 

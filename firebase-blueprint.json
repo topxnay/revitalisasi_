@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "entities": {
+    "proposals": {
+      "collection": "proposals",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "nomorRegistrasi": { "type": "string", "required": true },
+        "namaSekolah": { "type": "string", "required": true },
+        "npsn": { "type": "string", "required": true },
+        "jenjang": { "type": "string", "required": true },
+        "statusSekolah": { "type": "string", "required": true },
+        "alamat": { "type": "string", "required": true },
+        "kabKota": { "type": "string", "required": true },
+        "provinsi": { "type": "string", "required": true },
+        "totalUsulanBiaya": { "type": "number", "required": true },
+        "status": { "type": "string", "required": true },
+        "rincianBantuan": { "type": "array", "required": true },
+        "userId": { "type": "string", "required": false },
+        "createdAt": { "type": "string", "required": false },
+        "updatedAt": { "type": "string", "required": false }
+      }
+    },
+    "users": {
+      "collection": "users",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "username": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "role": { "type": "string", "required": true },
+        "status": { "type": "string", "required": true },
+        "password": { "type": "string", "required": true },
+        "createdAt": { "type": "string", "required": false },
+        "updatedAt": { "type": "string", "required": false }
+      }
+    },
+    "catalog": {
+      "collection": "catalog",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "category": { "type": "string", "required": true },
+        "nominalSatuan": { "type": "number", "required": true },
+        "unit": { "type": "string", "required": true },
+        "description": { "type": "string", "required": false }
+      }
+    },
+    "settings": {
+      "collection": "settings",
+      "fields": {
+        "id": { "type": "string", "required": true },
+        "config": { "type": "object", "required": true }
+      }
+    }
+  },
+  "rules": {
+    "proposals": "allow read, write: if true;",
+    "users": "allow read, write: if true;",
+    "catalog": "allow read, write: if true;",
+    "settings": "allow read, write: if true;"
+  }
+}
